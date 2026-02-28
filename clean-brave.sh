@@ -63,6 +63,14 @@ main() {
 
     header "Brave Browser Cleanup Tool"
 
+    # Check if any Brave installation exists before checking if running
+    if [[ ! -d "$NATIVE_PROFILE_DIR" ]] \
+        && ! flatpak_installed "$FLATPAK_APP_ID" \
+        && ! snap_installed "$SNAP_NAME"; then
+        warn "Brave not found on this system"
+        exit 0
+    fi
+
     if app_is_running "brave" || app_is_running "brave-browser"; then
         error "Brave appears to be running. Please close it first."
         exit 1

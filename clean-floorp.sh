@@ -76,6 +76,13 @@ main() {
 
     header "Floorp Cleanup Tool"
 
+    # Check if any Floorp installation exists before checking if running
+    if [[ ! -d "$NATIVE_PROFILE_DIR" ]] \
+        && ! flatpak_installed "$FLATPAK_APP_ID"; then
+        warn "Floorp not found on this system"
+        exit 0
+    fi
+
     if app_is_running "floorp"; then
         error "Floorp appears to be running. Please close it first."
         exit 1

@@ -63,6 +63,14 @@ main() {
 
     header "Chromium Cleanup Tool"
 
+    # Check if any Chromium installation exists before checking if running
+    if [[ ! -d "$NATIVE_PROFILE_DIR" ]] \
+        && ! flatpak_installed "$FLATPAK_APP_ID" \
+        && ! snap_installed "$SNAP_NAME"; then
+        warn "Chromium not found on this system"
+        exit 0
+    fi
+
     if app_is_running "chromium" || app_is_running "chromium-browser"; then
         error "Chromium appears to be running. Please close it first."
         exit 1

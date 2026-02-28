@@ -84,6 +84,14 @@ main() {
 
     header "Firefox Cleanup Tool"
 
+    # Check if any Firefox installation exists before checking if running
+    if [[ ! -d "$NATIVE_PROFILE_DIR" ]] \
+        && ! flatpak_installed "$FLATPAK_APP_ID" \
+        && ! snap_installed "$SNAP_NAME"; then
+        warn "Firefox not found on this system"
+        exit 0
+    fi
+
     if app_is_running "firefox"; then
         error "Firefox appears to be running. Please close it first."
         exit 1

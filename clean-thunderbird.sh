@@ -135,7 +135,14 @@ main() {
 
     header "Thunderbird Cleanup Tool"
 
-    # Check if Thunderbird is running
+    # Check if any Thunderbird installation exists before checking if running
+    if [[ ! -d "$NATIVE_PROFILE_DIR" ]] \
+        && ! flatpak_installed "$FLATPAK_APP_ID" \
+        && ! snap_installed "$SNAP_NAME"; then
+        warn "Thunderbird not found on this system"
+        exit 0
+    fi
+
     if app_is_running "thunderbird"; then
         error "Thunderbird appears to be running. Please close it first."
         exit 1

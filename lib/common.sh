@@ -49,10 +49,29 @@ snap_installed() {
 }
 
 # Check if an app is running (works for both native, flatpak, and snap)
+# Uses exact name match first, then command-line match excluding shell
+# interpreters so our own cleanup scripts don't trigger false positives.
 app_is_running() {
     local process_name="$1"
-    pgrep -x "$process_name" > /dev/null 2>&1 || \
-    pgrep -f "$process_name" > /dev/null 2>&1
+    # Exact process name match (most reliable)
+    pgrep -x "$process_name" > /dev/null 2>&1 && return 0
+    # Full command-line match, but skip shell interpreters
+    # (prevents matching our own "bash clean-firefox.sh" etc.)
+    local pids
+    pids=$(pgrep -f "$process_name" 2>/dev/null) || return 1
+    local pid
+    for pid in $pids; do
+        # Skip our own process and parent
+        [[ "$pid" == "$$" || "$pid" == "$PPID" ]] && continue
+        # Check what binary the process actually is
+        local exe
+        exe=$(readlink "/proc/$pid/exe" 2>/dev/null) || continue
+        case "$exe" in
+            */bash|*/sh|*/dash|*/zsh|*/fish|*/grep|*/pgrep) continue ;;
+        esac
+        return 0
+    done
+    return 1
 }
 
 # Safely remove a directory/file with size reporting

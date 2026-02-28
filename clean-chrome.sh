@@ -36,14 +36,15 @@ main() {
 
     header "Google Chrome Cleanup Tool"
 
+    # Check if Chrome is installed before checking if running
+    if [[ ! -d "$NATIVE_PROFILE_DIR" ]]; then
+        warn "Google Chrome not found on this system"
+        exit 0
+    fi
+
     if app_is_running "chrome" || app_is_running "google-chrome"; then
         error "Google Chrome appears to be running. Please close it first."
         exit 1
-    fi
-
-    if [[ ! -d "$NATIVE_PROFILE_DIR" ]]; then
-        warn "Google Chrome not found at $NATIVE_PROFILE_DIR"
-        exit 0
     fi
 
     if confirm "Clean Google Chrome cache and data?"; then
