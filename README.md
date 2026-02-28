@@ -12,6 +12,7 @@ A collection of Bash scripts to clean cache, temporary data, sessions, and other
 - **Scheduled cleaning** — set up automatic periodic cleanup via systemd timers or cron
 - **Extension auditing** — list all installed extensions across every browser and profile
 - **Privacy hardening** — apply privacy-focused `user.js` settings to Firefox/Floorp (3 levels)
+- **Performance optimization** — tune Firefox/Floorp for speed with balanced, aggressive, or low-RAM profiles
 - **Session export** — save open tabs to text/JSON/HTML/Markdown and restore them later
 - **Duplicate detection** — find redundant profiles, duplicate extensions, and wasted space
 - **Safe defaults** — bookmarks, passwords, extensions, and settings are always preserved
@@ -96,6 +97,7 @@ Profile manager commands:
 | `schedule-cleanup.sh` | Set up automatic scheduled cleaning (systemd timer or cron) |
 | `audit-extensions.sh` | List all installed extensions across all browsers |
 | `harden-privacy.sh` | Apply privacy-hardened `user.js` settings to Firefox/Floorp |
+| `optimize-performance.sh` | Apply performance-tuning `user.js` settings to Firefox/Floorp |
 | `export-sessions.sh` | Export and restore open browser tabs |
 | `detect-duplicates.sh` | Find duplicate extensions and redundant profiles |
 
@@ -267,6 +269,41 @@ Hardening levels:
 - **Strict** — Adds cookie isolation, WebRTC protection, search privacy, shutdown clearing
 - **Paranoid** — Adds fingerprint resistance, disables WebGL/WebRTC/JIT, strict referrer policy
 
+### Performance Optimization
+
+Tune Firefox and Floorp for maximum speed:
+
+```bash
+# Preview balanced settings (safe for all hardware)
+./optimize-performance.sh show
+
+# Apply balanced optimization
+./optimize-performance.sh apply
+
+# Apply aggressive optimization (max speed)
+./optimize-performance.sh apply --aggressive
+
+# Optimize for low-RAM systems (≤ 4 GB)
+./optimize-performance.sh apply --low-ram
+
+# Check current performance settings
+./optimize-performance.sh status
+
+# Quick system & browser benchmark
+./optimize-performance.sh benchmark
+
+# Revert to original settings
+./optimize-performance.sh revert
+
+# Target specific browser/profile
+./optimize-performance.sh apply --aggressive --browser firefox --profile default-release
+```
+
+Optimization levels:
+- **Balanced** — GPU acceleration, HTTP/3, smooth scrolling, JIT enabled, telemetry off
+- **Aggressive** — Higher connection limits, larger caches, disabled UI overhead
+- **Low-RAM** — Fewer processes, smaller caches, aggressive tab unloading, memory-conscious
+
 ### Session Export
 
 Save and restore open browser tabs:
@@ -359,6 +396,7 @@ Additional flags for specific scripts:
 | `--csv` | audit-extensions | Output as CSV |
 | `--details` | audit-extensions | Show extension permissions |
 | `--standard/--strict/--paranoid` | harden-privacy | Privacy hardening level |
+| `--balanced/--aggressive/--low-ram` | optimize-performance | Performance optimization level |
 | `--format` | export-sessions | Export format (text/json/html/markdown) |
 
 ## What Gets Cleaned
@@ -407,6 +445,7 @@ Browser_Cleanup_Tools/
 ├── schedule-cleanup.sh           # Scheduled cleaning setup
 ├── audit-extensions.sh           # Extension auditor
 ├── harden-privacy.sh             # Privacy hardening (user.js)
+├── optimize-performance.sh       # Performance tuning (user.js)
 ├── export-sessions.sh            # Tab session export/restore
 ├── detect-duplicates.sh          # Duplicate/redundancy finder
 ├── lib/
