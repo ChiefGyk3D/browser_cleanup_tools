@@ -1,6 +1,9 @@
 # Backup directories
 *-backups/
 
+# Session exports
+session-exports/
+
 # OS files
 .DS_Store
 Thumbs.db

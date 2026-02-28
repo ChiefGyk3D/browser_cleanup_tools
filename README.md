@@ -10,6 +10,10 @@ A collection of Bash scripts to clean cache, temporary data, sessions, and other
 - **Profile management** — list, backup, create, delete, reset, and restore Firefox/Floorp profiles
 - **Profile migration** — migrate profiles between Firefox and Floorp
 - **Scheduled cleaning** — set up automatic periodic cleanup via systemd timers or cron
+- **Extension auditing** — list all installed extensions across every browser and profile
+- **Privacy hardening** — apply privacy-focused `user.js` settings to Firefox/Floorp (3 levels)
+- **Session export** — save open tabs to text/JSON/HTML/Markdown and restore them later
+- **Duplicate detection** — find redundant profiles, duplicate extensions, and wasted space
 - **Safe defaults** — bookmarks, passwords, extensions, and settings are always preserved
 
 ## Supported Applications
@@ -90,6 +94,10 @@ Profile manager commands:
 | `disk-report.sh` | Show disk usage breakdown for all browsers (supports `--json`) |
 | `migrate-profile.sh` | Migrate profiles between Firefox and Floorp |
 | `schedule-cleanup.sh` | Set up automatic scheduled cleaning (systemd timer or cron) |
+| `audit-extensions.sh` | List all installed extensions across all browsers |
+| `harden-privacy.sh` | Apply privacy-hardened `user.js` settings to Firefox/Floorp |
+| `export-sessions.sh` | Export and restore open browser tabs |
+| `detect-duplicates.sh` | Find duplicate extensions and redundant profiles |
 
 ## Usage Examples
 
@@ -206,6 +214,107 @@ Set up automatic periodic cache cleanup:
 ./schedule-cleanup.sh uninstall
 ```
 
+### Extension Auditing
+
+List every extension installed across all browsers:
+
+```bash
+# Audit all browsers
+./audit-extensions.sh
+
+# Show detailed permissions info
+./audit-extensions.sh --details
+
+# JSON output (for scripts or CI)
+./audit-extensions.sh --json
+
+# Audit only Firefox
+./audit-extensions.sh --browser firefox
+
+# CSV export
+./audit-extensions.sh --csv
+```
+
+### Privacy Hardening
+
+Apply privacy-focused settings to Firefox and Floorp profiles:
+
+```bash
+# Preview standard privacy settings
+./harden-privacy.sh show
+
+# Apply standard privacy settings (minimal breakage)
+./harden-privacy.sh apply
+
+# Apply strict privacy (may break some sites)
+./harden-privacy.sh apply --strict
+
+# Apply paranoid privacy (max protection, significant breakage)
+./harden-privacy.sh apply --paranoid
+
+# Check current privacy status of your profiles
+./harden-privacy.sh status
+
+# Revert to original settings
+./harden-privacy.sh revert
+
+# Target a specific browser/profile
+./harden-privacy.sh apply --strict --browser firefox --profile default-release
+```
+
+Hardening levels:
+- **Standard** — Disables telemetry, enables tracking protection, HTTPS-only, DoH
+- **Strict** — Adds cookie isolation, WebRTC protection, search privacy, shutdown clearing
+- **Paranoid** — Adds fingerprint resistance, disables WebGL/WebRTC/JIT, strict referrer policy
+
+### Session Export
+
+Save and restore open browser tabs:
+
+```bash
+# Export tabs from all browsers
+./export-sessions.sh export
+
+# Export as interactive HTML page
+./export-sessions.sh export --format html
+
+# Export as JSON (for scripting)
+./export-sessions.sh export --format json --browser firefox
+
+# Export as Markdown
+./export-sessions.sh export --format markdown
+
+# List saved exports
+./export-sessions.sh list
+
+# Restore tabs from latest export
+./export-sessions.sh restore latest
+
+# Restore in a specific browser
+./export-sessions.sh restore session.json --browser floorp
+```
+
+### Duplicate Detection
+
+Find redundant profiles, duplicate extensions, and wasted space:
+
+```bash
+# Full scan
+./detect-duplicates.sh
+
+# Only check for duplicate extensions
+./detect-duplicates.sh --extensions-only
+
+# Only check for unused profiles
+./detect-duplicates.sh --profiles-only
+
+# JSON output
+./detect-duplicates.sh --json
+
+# Scan specific browser only
+./detect-duplicates.sh --browser firefox
+```
+
 ### Selective Cleaning
 
 ```bash
@@ -246,7 +355,11 @@ Additional flags for specific scripts:
 | `--oauth` | Thunderbird | Clear OAuth2 tokens (forces re-login) |
 | `--offline-cache` | Thunderbird | Clear IMAP offline cache |
 | `--select` | clean-all | Interactively select apps to clean |
-| `--json` | disk-report | Output report as JSON |
+| `--json` | disk-report, audit-extensions, detect-duplicates | Output as JSON |
+| `--csv` | audit-extensions | Output as CSV |
+| `--details` | audit-extensions | Show extension permissions |
+| `--standard/--strict/--paranoid` | harden-privacy | Privacy hardening level |
+| `--format` | export-sessions | Export format (text/json/html/markdown) |
 
 ## What Gets Cleaned
 
@@ -292,6 +405,10 @@ Browser_Cleanup_Tools/
 ├── disk-report.sh                # Disk usage report
 ├── migrate-profile.sh            # Firefox ↔ Floorp profile migration
 ├── schedule-cleanup.sh           # Scheduled cleaning setup
+├── audit-extensions.sh           # Extension auditor
+├── harden-privacy.sh             # Privacy hardening (user.js)
+├── export-sessions.sh            # Tab session export/restore
+├── detect-duplicates.sh          # Duplicate/redundancy finder
 ├── lib/
 │   └── common.sh                 # Shared functions and utilities
 ├── LICENSE
@@ -306,6 +423,8 @@ Browser_Cleanup_Tools/
 - Flatpak (optional, for Flatpak app support)
 - Snap (optional, for Snap app support)
 - systemd (optional, for scheduled cleaning timers)
+- python3 (optional, for extension auditing, session export, JSON output)
+- jq (optional, alternative to python3 for JSON parsing)
 
 ## Safety
 
