@@ -17,7 +17,7 @@ show_help() {
     cat <<EOF
 ${BOLD}Firefox Profile Manager${NC}
 
-Manage Firefox profiles — list, backup, create, delete, and reset.
+Manage Firefox profiles — list, backup, create, delete, reset, and restore.
 Supports both native and Flatpak installations.
 
 Usage: $(basename "$0") <command> [OPTIONS]
@@ -25,6 +25,7 @@ Usage: $(basename "$0") <command> [OPTIONS]
 Commands:
   list                     List all profiles
   backup [profile_name]    Backup a profile (or all if none specified)
+  restore <backup_file>    Restore a profile from a backup archive
   create <profile_name>    Create a new profile
   delete <profile_name>    Delete a profile
   reset  <profile_name>    Reset a profile (backup + clean, keep bookmarks)
@@ -43,6 +44,7 @@ Examples:
   $(basename "$0") backup my-profile --backup-dir /tmp/backups
   $(basename "$0") create work-profile
   $(basename "$0") reset default-release -y
+  $(basename "$0") restore ~/firefox-backups/firefox-native-default-20260228.tar.gz
 EOF
 }
 
@@ -434,6 +436,116 @@ run_for_installations() {
     fi
 }
 
+# Restore a profile from a backup archive
+restore_backup() {
+    local backup_file="$1"
+
+    if [[ -z "$backup_file" ]]; then
+        # List available backups
+        header "Available Backups"
+        if [[ ! -d "$BACKUP_DIR" ]]; then
+            warn "No backup directory found at $BACKUP_DIR"
+            info "Create backups first with: $(basename "$0") backup"
+            return 1
+        fi
+
+        local backups=()
+        while IFS= read -r -d '' f; do
+            backups+=("$f")
+        done < <(find "$BACKUP_DIR" -name "${APP_NAME,,}-*.tar.gz" -print0 2>/dev/null | sort -z)
+
+        if [[ ${#backups[@]} -eq 0 ]]; then
+            warn "No backups found in $BACKUP_DIR"
+            return 1
+        fi
+
+        echo "Available backups:"
+        local i=1
+        for b in "${backups[@]}"; do
+            local bname
+            bname=$(basename "$b")
+            local bsize
+            bsize=$(du -sh "$b" 2>/dev/null | cut -f1)
+            local bdate
+            bdate=$(stat -c '%y' "$b" 2>/dev/null | cut -d'.' -f1)
+            printf "  ${BOLD}%2d)${NC} %-50s %s  %s\n" "$i" "$bname" "$bsize" "$bdate"
+            i=$((i + 1))
+        done
+        echo ""
+        read -rp "$(echo -e "${YELLOW}Enter backup number to restore (or 'q' to quit):${NC} ")" choice
+        if [[ "$choice" == "q" || -z "$choice" ]]; then
+            return 0
+        fi
+        if [[ ! "$choice" =~ ^[0-9]+$ ]] || [[ "$choice" -lt 1 ]] || [[ "$choice" -gt ${#backups[@]} ]]; then
+            error "Invalid selection"
+            return 1
+        fi
+        backup_file="${backups[$((choice - 1))]}"
+    fi
+
+    if [[ ! -f "$backup_file" ]]; then
+        error "Backup file not found: $backup_file"
+        return 1
+    fi
+
+    # Determine which installation to restore to
+    local target_dir=""
+    if [[ "$FLATPAK_ONLY" == "true" ]] && [[ -d "$FLATPAK_PROFILE_DIR" ]]; then
+        target_dir="$FLATPAK_PROFILE_DIR"
+    elif [[ "$NATIVE_ONLY" == "true" ]] && [[ -d "$NATIVE_PROFILE_DIR" ]]; then
+        target_dir="$NATIVE_PROFILE_DIR"
+    elif [[ -d "$NATIVE_PROFILE_DIR" ]]; then
+        target_dir="$NATIVE_PROFILE_DIR"
+    elif [[ -d "$FLATPAK_PROFILE_DIR" ]]; then
+        target_dir="$FLATPAK_PROFILE_DIR"
+    else
+        error "No $APP_NAME installation found to restore into"
+        return 1
+    fi
+
+    # Show what's in the backup
+    local backup_contents
+    backup_contents=$(tar -tzf "$backup_file" 2>/dev/null | head -1)
+    local profile_dirname
+    profile_dirname=$(echo "$backup_contents" | cut -d'/' -f1)
+
+    local backup_size
+    backup_size=$(du -sh "$backup_file" 2>/dev/null | cut -f1)
+
+    echo -e "\n${BOLD}Restore Details:${NC}"
+    echo "  Archive: $(basename "$backup_file") ($backup_size)"
+    echo "  Profile: $profile_dirname"
+    echo "  Target:  $target_dir/"
+    echo ""
+
+    local target_profile="$target_dir/$profile_dirname"
+    if [[ -d "$target_profile" ]]; then
+        warn "Profile directory already exists: $target_profile"
+        echo "  Restoring will REPLACE the existing profile."
+        echo ""
+    fi
+
+    if confirm "Restore this backup?"; then
+        # Remove existing profile if present
+        if [[ -d "$target_profile" ]]; then
+            rm -rf "$target_profile"
+        fi
+
+        # Extract
+        tar -xzf "$backup_file" -C "$target_dir/" 2>/dev/null
+        success "Restored profile to: $target_profile"
+
+        # Check if profile is in profiles.ini
+        local ini_file="$target_dir/profiles.ini"
+        if [[ -f "$ini_file" ]]; then
+            if ! grep -q "Path=$profile_dirname" "$ini_file" 2>/dev/null; then
+                warn "Profile not found in profiles.ini — you may need to add it manually"
+                info "Or run: $APP_NAME -P to use the built-in profile manager"
+            fi
+        fi
+    fi
+}
+
 main() {
     parse_common_flags "$@" || { show_help; exit 0; }
 
@@ -446,7 +558,7 @@ main() {
             --flatpak-only)      FLATPAK_ONLY=true ;;
             --backup-dir)        :;;  # handled below
             -y|--yes|-h|--help)  ;;
-            list|backup|create|delete|reset|info)
+            list|backup|create|delete|reset|info|restore)
                 command="$arg" ;;
             *)
                 # Check if previous arg was --backup-dir
@@ -481,13 +593,14 @@ main() {
     fi
 
     case "$command" in
-        list)   run_for_installations list_profiles ;;
-        info)   run_for_installations show_profile_info "$target" ;;
-        backup) run_for_installations backup_profile "$target" ;;
-        create) run_for_installations create_profile "$target" ;;
-        delete) run_for_installations delete_profile "$target" ;;
-        reset)  run_for_installations reset_profile "$target" ;;
-        *)      show_help; exit 1 ;;
+        list)    run_for_installations list_profiles ;;
+        info)    run_for_installations show_profile_info "$target" ;;
+        backup)  run_for_installations backup_profile "$target" ;;
+        create)  run_for_installations create_profile "$target" ;;
+        delete)  run_for_installations delete_profile "$target" ;;
+        reset)   run_for_installations reset_profile "$target" ;;
+        restore) restore_backup "$target" ;;
+        *)       show_help; exit 1 ;;
     esac
 }
 

@@ -28,6 +28,7 @@ Usage: $(basename "$0") [OPTIONS]
 
 Options:
   -y, --yes         Skip confirmation prompts
+  -n, --dry-run     Show what would be removed without deleting anything
   --native-only     Only clean native installation
   --flatpak-only    Only clean Flatpak installation
   --deep            Also remove site storage, cookies, and search history
@@ -36,6 +37,7 @@ Options:
 Examples:
   $(basename "$0")              # Clean cache for all installations
   $(basename "$0") --deep -y    # Deep clean, no prompts
+  $(basename "$0") --dry-run    # Preview what would be cleaned
 
 For profile management, see: floorp-profile-manager.sh
 EOF

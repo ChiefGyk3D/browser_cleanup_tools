@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # clean-thunderbird.sh - Clean Thunderbird cache, tokens, and temp data
-# Supports both native and Flatpak installations
+# Supports native, Flatpak, and Snap installations
 # https://github.com/chiefgyk3d/Browser_Cleanup_Tools
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -17,19 +17,26 @@ FLATPAK_BASE="$HOME/.var/app/$FLATPAK_APP_ID"
 FLATPAK_PROFILE_DIR="$FLATPAK_BASE/.thunderbird"
 FLATPAK_CACHE_DIR="$FLATPAK_BASE/cache"
 
+# Snap
+SNAP_NAME="thunderbird"
+SNAP_PROFILE_DIR="$HOME/snap/thunderbird/common/.thunderbird"
+SNAP_CACHE_DIR="$HOME/snap/thunderbird/common/.cache/thunderbird"
+
 show_help() {
     cat <<EOF
 ${BOLD}Thunderbird Cleanup Tool${NC}
 
 Clears cache, OAuth tokens, offline storage, and temp data for Thunderbird.
-Supports both native (apt/dnf/pacman) and Flatpak installations.
+Supports native (apt/dnf/pacman), Flatpak, and Snap installations.
 
 Usage: $(basename "$0") [OPTIONS]
 
 Options:
   -y, --yes         Skip confirmation prompts
+  -n, --dry-run     Show what would be removed without deleting anything
   --native-only     Only clean native installation
   --flatpak-only    Only clean Flatpak installation
+  --snap-only       Only clean Snap installation
   --oauth           Also remove OAuth2 tokens (forces re-login)
   --offline-cache   Also remove IMAP offline cache
   --deep            Remove OAuth tokens + offline cache + search index
@@ -39,6 +46,7 @@ Examples:
   $(basename "$0")              # Clean cache for all installations
   $(basename "$0") --deep -y    # Deep clean, no prompts
   $(basename "$0") --oauth      # Clean cache + force OAuth re-auth
+  $(basename "$0") --dry-run    # Preview what would be cleaned
 EOF
 }
 
@@ -105,6 +113,7 @@ clean_thunderbird_profiles() {
 main() {
     local native_only=false
     local flatpak_only=false
+    local snap_only=false
     CLEAN_OAUTH=false
     CLEAN_OFFLINE=false
     DEEP_CLEAN=false
@@ -115,6 +124,7 @@ main() {
         case "$arg" in
             --native-only)   native_only=true ;;
             --flatpak-only)  flatpak_only=true ;;
+            --snap-only)     snap_only=true ;;
             --oauth)         CLEAN_OAUTH=true ;;
             --offline-cache) CLEAN_OFFLINE=true ;;
             --deep)          CLEAN_OAUTH=true; CLEAN_OFFLINE=true; DEEP_CLEAN=true ;;
@@ -134,7 +144,7 @@ main() {
     local cleaned=false
 
     # Native installation
-    if [[ "$flatpak_only" != "true" ]] && [[ -d "$NATIVE_PROFILE_DIR" ]]; then
+    if [[ "$flatpak_only" != "true" && "$snap_only" != "true" ]] && [[ -d "$NATIVE_PROFILE_DIR" ]]; then
         header "Native Thunderbird"
         if confirm "Clean native Thunderbird cache and data?"; then
             safe_clean_dir "$NATIVE_CACHE_DIR" "Native Thunderbird cache"
@@ -144,15 +154,27 @@ main() {
     fi
 
     # Flatpak installation
-    if [[ "$native_only" != "true" ]] && flatpak_installed "$FLATPAK_APP_ID"; then
+    if [[ "$native_only" != "true" && "$snap_only" != "true" ]] && flatpak_installed "$FLATPAK_APP_ID"; then
         header "Flatpak Thunderbird"
         if confirm "Clean Flatpak Thunderbird cache and data?"; then
             safe_clean_dir "$FLATPAK_CACHE_DIR" "Flatpak Thunderbird cache"
             clean_thunderbird_profiles "$FLATPAK_PROFILE_DIR" "Flatpak"
             cleaned=true
         fi
-    elif [[ "$native_only" != "true" ]] && [[ ! -d "$NATIVE_PROFILE_DIR" ]]; then
+    elif [[ "$native_only" != "true" && "$snap_only" != "true" ]]; then
         info "Flatpak Thunderbird not installed"
+    fi
+
+    # Snap installation
+    if [[ "$native_only" != "true" && "$flatpak_only" != "true" ]] && snap_installed "$SNAP_NAME"; then
+        header "Snap Thunderbird"
+        if confirm "Clean Snap Thunderbird cache and data?"; then
+            safe_clean_dir "$SNAP_CACHE_DIR" "Snap Thunderbird cache"
+            clean_thunderbird_profiles "$SNAP_PROFILE_DIR" "Snap"
+            cleaned=true
+        fi
+    elif [[ "$native_only" != "true" && "$flatpak_only" != "true" ]]; then
+        info "Snap Thunderbird not installed"
     fi
 
     if [[ "$cleaned" == "true" ]]; then

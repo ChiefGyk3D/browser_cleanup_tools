@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # clean-chrome.sh - Clean Google Chrome cache, sessions, and temp data
-# Native installation only (Chrome is not available as a Flatpak)
+# Native installation only (Chrome is not available as a Flatpak or Snap)
 # https://github.com/chiefgyk3d/Browser_Cleanup_Tools
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -20,12 +20,14 @@ Chrome is only available as a native installation on Linux.
 Usage: $(basename "$0") [OPTIONS]
 
 Options:
-  -y, --yes     Skip confirmation prompts
-  -h, --help    Show this help message
+  -y, --yes       Skip confirmation prompts
+  -n, --dry-run   Show what would be removed without deleting anything
+  -h, --help      Show this help message
 
 Examples:
-  $(basename "$0")        # Clean Chrome cache
-  $(basename "$0") -y     # Clean without prompts
+  $(basename "$0")          # Clean Chrome cache
+  $(basename "$0") -y       # Clean without prompts
+  $(basename "$0") --dry-run # Preview what would be cleaned
 EOF
 }
 

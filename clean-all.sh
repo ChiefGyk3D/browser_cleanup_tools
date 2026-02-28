@@ -15,25 +15,28 @@ Usage: $(basename "$0") [OPTIONS]
 
 Options:
   -y, --yes              Skip confirmation prompts
+  -n, --dry-run          Show what would be removed without deleting anything
   --select               Interactively select which apps to clean
   --deep                 Deep clean where supported (Firefox, Floorp, Thunderbird)
   --thunderbird-oauth    Also clear Thunderbird OAuth2 tokens
   --native-only          Only clean native installations
   --flatpak-only         Only clean Flatpak installations
+  --snap-only            Only clean Snap installations
   -h, --help             Show this help message
 
 Supported Applications:
-  - Thunderbird (native + Flatpak)
-  - Firefox     (native + Flatpak)
+  - Thunderbird (native + Flatpak + Snap)
+  - Firefox     (native + Flatpak + Snap)
   - Floorp      (native + Flatpak)
-  - Chromium    (native + Flatpak)
-  - Brave       (native + Flatpak)
+  - Chromium    (native + Flatpak + Snap)
+  - Brave       (native + Flatpak + Snap)
   - Chrome      (native only)
 
 Examples:
   $(basename "$0")                    # Clean all with prompts
   $(basename "$0") -y                 # Clean all, no prompts
   $(basename "$0") --deep -y          # Deep clean everything
+  $(basename "$0") --dry-run          # Preview everything
   $(basename "$0") --select           # Pick which apps to clean
 EOF
 }
@@ -51,7 +54,9 @@ main() {
             --thunderbird-oauth) extra_args+=("--oauth") ;;
             --native-only)       extra_args+=("--native-only") ;;
             --flatpak-only)      extra_args+=("--flatpak-only") ;;
+            --snap-only)         extra_args+=("--snap-only") ;;
             -y|--yes)            extra_args+=("-y") ;;
+            -n|--dry-run)        extra_args+=("--dry-run") ;;
         esac
     done
 

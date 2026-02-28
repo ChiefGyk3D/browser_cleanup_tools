@@ -1,17 +1,27 @@
 # Browser Cleanup Tools
 
-A collection of Bash scripts to clean cache, temporary data, sessions, and other cruft from popular Linux browsers and email clients. Supports both **native** (apt/dnf/pacman) and **Flatpak** installations.
+A collection of Bash scripts to clean cache, temporary data, sessions, and other cruft from popular Linux browsers and email clients. Supports **native** (apt/dnf/pacman), **Flatpak**, and **Snap** installations.
+
+## Features
+
+- **Cache & data cleaning** for 6 browsers/apps across native, Flatpak, and Snap
+- **Dry-run mode** — preview what would be removed without deleting anything
+- **Disk usage reports** — see exactly how much space each browser uses (with JSON export)
+- **Profile management** — list, backup, create, delete, reset, and restore Firefox/Floorp profiles
+- **Profile migration** — migrate profiles between Firefox and Floorp
+- **Scheduled cleaning** — set up automatic periodic cleanup via systemd timers or cron
+- **Safe defaults** — bookmarks, passwords, extensions, and settings are always preserved
 
 ## Supported Applications
 
-| Application | Cache Clean | Deep Clean | Profile Manager | Native | Flatpak |
-|-------------|:-----------:|:----------:|:---------------:|:------:|:-------:|
-| Thunderbird | ✅ | ✅ (+ OAuth reset) | — | ✅ | ✅ |
-| Firefox     | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Floorp      | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Chromium    | ✅ | — | — | ✅ | ✅ |
-| Brave       | ✅ | — | — | ✅ | ✅ |
-| Chrome      | ✅ | — | — | ✅ | N/A |
+| Application | Cache Clean | Deep Clean | Profile Manager | Native | Flatpak | Snap |
+|-------------|:-----------:|:----------:|:---------------:|:------:|:-------:|:----:|
+| Thunderbird | ✅ | ✅ (+ OAuth reset) | — | ✅ | ✅ | ✅ |
+| Firefox     | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Floorp      | ✅ | ✅ | ✅ | ✅ | ✅ | — |
+| Chromium    | ✅ | — | — | ✅ | ✅ | ✅ |
+| Brave       | ✅ | — | — | ✅ | ✅ | ✅ |
+| Chrome      | ✅ | — | — | ✅ | N/A | — |
 
 ## Quick Start
 
@@ -22,6 +32,12 @@ cd Browser_Cleanup_Tools
 
 # Make scripts executable
 chmod +x *.sh lib/*.sh
+
+# Preview what would be cleaned (dry-run)
+./clean-all.sh --dry-run
+
+# See disk usage for all browsers
+./disk-report.sh
 
 # Clean everything (with prompts)
 ./clean-all.sh
@@ -42,11 +58,11 @@ Each cleaner removes cache, temporary files, session data, shader caches, crash 
 | Script | Description |
 |--------|-------------|
 | `clean-all.sh` | Run all cleaners at once |
-| `clean-thunderbird.sh` | Clean Thunderbird (native + Flatpak) |
-| `clean-firefox.sh` | Clean Firefox (native + Flatpak) |
+| `clean-thunderbird.sh` | Clean Thunderbird (native + Flatpak + Snap) |
+| `clean-firefox.sh` | Clean Firefox (native + Flatpak + Snap) |
 | `clean-floorp.sh` | Clean Floorp (native + Flatpak) |
-| `clean-chromium.sh` | Clean Chromium (native + Flatpak) |
-| `clean-brave.sh` | Clean Brave Browser (native + Flatpak) |
+| `clean-chromium.sh` | Clean Chromium (native + Flatpak + Snap) |
+| `clean-brave.sh` | Clean Brave Browser (native + Flatpak + Snap) |
 | `clean-chrome.sh` | Clean Google Chrome (native only) |
 
 ### Profile Managers
@@ -65,6 +81,15 @@ Profile manager commands:
 - **create** — Create a new named profile
 - **delete** — Delete a profile (auto-backup first)
 - **reset** — Reset a profile: removes cache/cookies/sessions but keeps bookmarks, passwords, extensions, and preferences
+- **restore** — Restore a profile from a previous backup archive
+
+### Additional Tools
+
+| Script | Description |
+|--------|-------------|
+| `disk-report.sh` | Show disk usage breakdown for all browsers (supports `--json`) |
+| `migrate-profile.sh` | Migrate profiles between Firefox and Floorp |
+| `schedule-cleanup.sh` | Set up automatic scheduled cleaning (systemd timer or cron) |
 
 ## Usage Examples
 
@@ -85,6 +110,31 @@ If Thunderbird is having trouble pulling Office 365/Exchange emails:
 
 After running, open Thunderbird and it will re-authenticate with Microsoft's OAuth2 flow.
 
+### Dry-Run Mode
+
+Preview what would be cleaned without actually removing anything:
+
+```bash
+# See what clean-all would remove
+./clean-all.sh --dry-run
+
+# Dry-run on a single browser
+./clean-firefox.sh --dry-run
+
+# Combine with other flags
+./clean-thunderbird.sh --deep --oauth --dry-run
+```
+
+### Disk Usage Report
+
+```bash
+# Show disk usage for all browsers
+./disk-report.sh
+
+# Export as JSON (for scripts or monitoring)
+./disk-report.sh --json
+```
+
 ### Firefox / Floorp Profile Management
 
 ```bash
@@ -97,6 +147,9 @@ After running, open Thunderbird and it will re-authenticate with Microsoft's OAu
 # Backup all profiles
 ./firefox-profile-manager.sh backup
 
+# Restore a profile from backup
+./firefox-profile-manager.sh restore default-release
+
 # Create a new profile for work
 ./firefox-profile-manager.sh create work
 
@@ -108,6 +161,51 @@ After running, open Thunderbird and it will re-authenticate with Microsoft's OAu
 ./floorp-profile-manager.sh reset default-release
 ```
 
+### Profile Migration
+
+Migrate profiles between Firefox and Floorp:
+
+```bash
+# Interactive migration from Firefox to Floorp
+./migrate-profile.sh firefox-to-floorp
+
+# Migrate from Floorp to Firefox
+./migrate-profile.sh floorp-to-firefox
+
+# Specify which profile to migrate
+./migrate-profile.sh firefox-to-floorp --source-profile default-release
+
+# Migrate from a Flatpak install to a native install
+./migrate-profile.sh firefox-to-floorp --source-type flatpak --target-type native
+```
+
+### Scheduled Cleaning
+
+Set up automatic periodic cache cleanup:
+
+```bash
+# Install weekly cleanup (systemd timer)
+./schedule-cleanup.sh install
+
+# Install daily cleanup
+./schedule-cleanup.sh install --interval daily
+
+# Install with deep cleaning enabled
+./schedule-cleanup.sh install --deep
+
+# Use cron instead of systemd
+./schedule-cleanup.sh install --use-cron
+
+# Check timer status
+./schedule-cleanup.sh status
+
+# Trigger cleanup now
+./schedule-cleanup.sh run-now
+
+# Remove scheduled cleanup
+./schedule-cleanup.sh uninstall
+```
+
 ### Selective Cleaning
 
 ```bash
@@ -116,6 +214,9 @@ After running, open Thunderbird and it will re-authenticate with Microsoft's OAu
 
 # Only clean Flatpak versions
 ./clean-all.sh --flatpak-only -y
+
+# Only clean Snap versions
+./clean-all.sh --snap-only -y
 
 # Only clean native versions
 ./clean-all.sh --native-only -y
@@ -126,13 +227,15 @@ After running, open Thunderbird and it will re-authenticate with Microsoft's OAu
 
 ## Common Options
 
-All scripts support these flags:
+All cleaner scripts support these flags:
 
 | Flag | Description |
 |------|-------------|
 | `-y`, `--yes` | Skip all confirmation prompts |
+| `-n`, `--dry-run` | Preview changes without deleting anything |
 | `--native-only` | Only clean native installations |
 | `--flatpak-only` | Only clean Flatpak installations |
+| `--snap-only` | Only clean Snap installations |
 | `-h`, `--help` | Show help message |
 
 Additional flags for specific scripts:
@@ -143,6 +246,7 @@ Additional flags for specific scripts:
 | `--oauth` | Thunderbird | Clear OAuth2 tokens (forces re-login) |
 | `--offline-cache` | Thunderbird | Clear IMAP offline cache |
 | `--select` | clean-all | Interactively select apps to clean |
+| `--json` | disk-report | Output report as JSON |
 
 ## What Gets Cleaned
 
@@ -185,6 +289,9 @@ Browser_Cleanup_Tools/
 ├── clean-chrome.sh               # Chrome cleaner
 ├── firefox-profile-manager.sh    # Firefox profile management
 ├── floorp-profile-manager.sh     # Floorp profile management
+├── disk-report.sh                # Disk usage report
+├── migrate-profile.sh            # Firefox ↔ Floorp profile migration
+├── schedule-cleanup.sh           # Scheduled cleaning setup
 ├── lib/
 │   └── common.sh                 # Shared functions and utilities
 ├── LICENSE
@@ -197,6 +304,8 @@ Browser_Cleanup_Tools/
 - **Linux** (paths are Linux-specific)
 - Standard tools: `find`, `du`, `tar`, `grep`, `pgrep`
 - Flatpak (optional, for Flatpak app support)
+- Snap (optional, for Snap app support)
+- systemd (optional, for scheduled cleaning timers)
 
 ## Safety
 

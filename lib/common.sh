@@ -10,8 +10,13 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 CYAN='\033[0;36m'
+MAGENTA='\033[0;35m'
 BOLD='\033[1m'
+DIM='\033[2m'
 NC='\033[0m' # No Color
+
+# Dry-run mode (set via --dry-run flag)
+DRY_RUN="${DRY_RUN:-false}"
 
 # Print helpers
 info()    { echo -e "${BLUE}[INFO]${NC} $*"; }
@@ -19,6 +24,7 @@ success() { echo -e "${GREEN}[OK]${NC} $*"; }
 warn()    { echo -e "${YELLOW}[WARN]${NC} $*"; }
 error()   { echo -e "${RED}[ERROR]${NC} $*"; }
 header()  { echo -e "\n${BOLD}${CYAN}=== $* ===${NC}\n"; }
+dry_run() { echo -e "${MAGENTA}[DRY-RUN]${NC} Would remove: $*"; }
 
 # Prompt for confirmation (defaults to No unless -y flag was passed)
 confirm() {
@@ -36,7 +42,13 @@ flatpak_installed() {
     flatpak list --app --columns=application 2>/dev/null | grep -q "^${app_id}$"
 }
 
-# Check if an app is running (works for both native and flatpak)
+# Check if a snap is installed
+snap_installed() {
+    local snap_name="$1"
+    snap list "$snap_name" &>/dev/null
+}
+
+# Check if an app is running (works for both native, flatpak, and snap)
 app_is_running() {
     local process_name="$1"
     pgrep -x "$process_name" > /dev/null 2>&1 || \
@@ -50,8 +62,12 @@ safe_remove() {
     if [[ -e "$target" ]]; then
         local size
         size=$(du -sh "$target" 2>/dev/null | cut -f1) || size="unknown"
-        rm -rf "$target"
-        success "Removed $description ($size)"
+        if [[ "$DRY_RUN" == "true" ]]; then
+            dry_run "$description ($size)"
+        else
+            rm -rf "$target"
+            success "Removed $description ($size)"
+        fi
     else
         info "Not found: $description (skipped)"
     fi
@@ -64,8 +80,12 @@ safe_clean_dir() {
     if [[ -d "$target" ]]; then
         local size
         size=$(du -sh "$target" 2>/dev/null | cut -f1) || size="unknown"
-        rm -rf "${target:?}/"*
-        success "Cleaned $description ($size freed)"
+        if [[ "$DRY_RUN" == "true" ]]; then
+            dry_run "$description ($size)"
+        else
+            rm -rf "${target:?}/"*
+            success "Cleaned $description ($size freed)"
+        fi
     else
         info "Not found: $description (skipped)"
     fi
@@ -80,13 +100,53 @@ safe_remove_glob() {
         local count
         count=$(find "$dir" -maxdepth 1 -name "$pattern" 2>/dev/null | wc -l)
         if [[ "$count" -gt 0 ]]; then
-            find "$dir" -maxdepth 1 -name "$pattern" -exec rm -rf {} +
-            success "Removed $count file(s): $description"
+            local size
+            size=$(find "$dir" -maxdepth 1 -name "$pattern" -exec du -shc {} + 2>/dev/null | tail -1 | cut -f1) || size="unknown"
+            if [[ "$DRY_RUN" == "true" ]]; then
+                dry_run "$count file(s): $description ($size)"
+            else
+                find "$dir" -maxdepth 1 -name "$pattern" -exec rm -rf {} +
+                success "Removed $count file(s): $description"
+            fi
         else
             info "No matches: $description (skipped)"
         fi
     else
         info "Not found: $dir (skipped)"
+    fi
+}
+
+# Calculate total size of a path (returns size string like "1.5G")
+get_size() {
+    local target="$1"
+    if [[ -e "$target" ]]; then
+        du -sh "$target" 2>/dev/null | cut -f1
+    else
+        echo "0"
+    fi
+}
+
+# Calculate size in bytes for comparison/summing
+get_size_bytes() {
+    local target="$1"
+    if [[ -e "$target" ]]; then
+        du -sb "$target" 2>/dev/null | cut -f1
+    else
+        echo "0"
+    fi
+}
+
+# Convert bytes to human-readable
+human_size() {
+    local bytes="$1"
+    if [[ "$bytes" -ge 1073741824 ]]; then
+        echo "$(echo "scale=1; $bytes / 1073741824" | bc)G"
+    elif [[ "$bytes" -ge 1048576 ]]; then
+        echo "$(echo "scale=1; $bytes / 1048576" | bc)M"
+    elif [[ "$bytes" -ge 1024 ]]; then
+        echo "$(echo "scale=1; $bytes / 1024" | bc)K"
+    else
+        echo "${bytes}B"
     fi
 }
 
@@ -212,11 +272,16 @@ clean_mozilla_profile() {
 # Parse common flags
 parse_common_flags() {
     AUTO_YES=false
+    DRY_RUN=false
     for arg in "$@"; do
         case "$arg" in
             -y|--yes) AUTO_YES=true ;;
+            -n|--dry-run) DRY_RUN=true ;;
             -h|--help) return 1 ;;
         esac
     done
-    export AUTO_YES
+    export AUTO_YES DRY_RUN
+    if [[ "$DRY_RUN" == "true" ]]; then
+        echo -e "${MAGENTA}${BOLD}*** DRY-RUN MODE — no files will be deleted ***${NC}"
+    fi
 }
