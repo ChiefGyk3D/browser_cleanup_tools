@@ -374,10 +374,10 @@ detect_refresh_rate() {
 
     local rate=""
 
-    # Try nvidia-settings first
+    # Try nvidia-settings first (format: "2560x1440_180 @2560x1440")
     if command -v nvidia-settings &>/dev/null; then
         rate=$(nvidia-settings -t -q CurrentMetaMode 2>/dev/null | \
-            grep -oP '@\K[0-9]+' | sort -rn | head -1)
+            grep -oP '[0-9]+x[0-9]+_\K[0-9]+' | sort -rn | head -1)
         [[ -n "$rate" ]] && { echo "$rate"; return; }
     fi
 

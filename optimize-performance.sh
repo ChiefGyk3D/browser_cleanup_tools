@@ -844,7 +844,7 @@ do_benchmark() {
 for_each_profile() {
     local callback="$1"
     shift
-    local applied=0
+    _PROFILE_COUNT=0
 
     while read -r browser_key; do
         [[ -z "$browser_key" ]] && continue
@@ -856,24 +856,20 @@ for_each_profile() {
         display_name=$(get_display_name "$browser_key" 2>/dev/null || echo "$browser_key")
 
         local has_profiles=false
-        while IFS='|' read -r install_type profile_dir; do
+        while IFS='|' read -r install_type profile_name profile_dir; do
             [[ -z "$profile_dir" ]] && continue
-            local pname
-            pname=$(basename "$profile_dir")
-            if [[ -n "$TARGET_PROFILE" && "$pname" != *"$TARGET_PROFILE"* ]]; then
+            if [[ -n "$TARGET_PROFILE" && "$profile_name" != *"$TARGET_PROFILE"* ]]; then
                 continue
             fi
             if [[ "$has_profiles" == "false" ]]; then
                 echo -e "\n${BOLD}${display_name}${NC}"
                 has_profiles=true
             fi
-            echo -e "  ${DIM}[$install_type]${NC} $pname"
+            echo -e "  ${DIM}[$install_type]${NC} $profile_name"
             "$callback" "$profile_dir" "$@"
-            ((applied++))
+            _PROFILE_COUNT=$((_PROFILE_COUNT + 1))
         done < <(find_browser_profiles "$browser_key")
     done < <(get_target_browsers)
-
-    echo "$applied"
 }
 
 # ---- Main ----
@@ -937,27 +933,26 @@ main() {
                 confirm "Apply ${LEVEL} performance settings?" || { info "Cancelled."; exit 0; }
             fi
 
-            local applied
-            applied=$(for_each_profile apply_to_profile "$LEVEL")
+            for_each_profile apply_to_profile "$LEVEL"
 
             echo ""
-            if [[ "$applied" -eq 0 ]]; then
+            if [[ "$_PROFILE_COUNT" -eq 0 ]]; then
                 warn "No matching profiles found"
             else
-                success "Applied settings to $applied profile(s)"
+                success "Applied settings to $_PROFILE_COUNT profile(s)"
                 echo -e "\n${DIM}Restart your browser for settings to take effect.${NC}"
             fi
             ;;
         status)
             header "Performance Status"
-            for_each_profile show_profile_status > /dev/null
+            for_each_profile show_profile_status
             ;;
         revert)
             header "Reverting Performance Optimization"
             if [[ "$AUTO_YES" != "true" && "$DRY_RUN" != "true" ]]; then
                 confirm "Revert performance settings (restore original user.js)?" || { info "Cancelled."; exit 0; }
             fi
-            for_each_profile revert_profile > /dev/null
+            for_each_profile revert_profile
             echo -e "\n${DIM}Restart your browser for changes to take effect.${NC}"
             ;;
         gpu-info)

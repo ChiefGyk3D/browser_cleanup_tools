@@ -563,18 +563,16 @@ for_each_profile() {
     display_name=$(get_display_name "$browser_key")
     local found=false
 
-    while IFS='|' read -r install_type profile_dir; do
+    while IFS='|' read -r install_type profile_name profile_dir; do
         [[ -z "$profile_dir" ]] && continue
-        local pname
-        pname=$(basename "$profile_dir")
-        if [[ -n "$TARGET_PROFILE" && "$pname" != *"$TARGET_PROFILE"* ]]; then
+        if [[ -n "$TARGET_PROFILE" && "$profile_name" != *"$TARGET_PROFILE"* ]]; then
             continue
         fi
         if [[ "$found" == "false" ]]; then
             echo -e "\n${BOLD}${display_name}${NC}"
             found=true
         fi
-        echo -e "  ${DIM}[$install_type]${NC} $pname"
+        echo -e "  ${DIM}[$install_type]${NC} $profile_name"
         "$callback" "$profile_dir" "$@"
     done < <(find_browser_profiles "$browser_key")
 
