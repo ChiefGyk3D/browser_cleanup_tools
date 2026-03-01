@@ -4,6 +4,12 @@
 
 set -euo pipefail
 
+# Source companion libraries if available
+COMMON_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+[[ -f "$COMMON_DIR/paths.sh" ]] && source "$COMMON_DIR/paths.sh"
+[[ -f "$COMMON_DIR/profiles.sh" ]] && source "$COMMON_DIR/profiles.sh"
+[[ -f "$COMMON_DIR/config.sh" ]] && source "$COMMON_DIR/config.sh"
+
 # Colors
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -93,10 +99,18 @@ safe_remove() {
 }
 
 # Remove contents of a directory but keep the directory itself
+# Enhanced with canonical path safety check
 safe_clean_dir() {
     local target="$1"
     local description="${2:-$target}"
     if [[ -d "$target" ]]; then
+        # Safety: resolve canonical path and ensure it's under $HOME
+        local canonical
+        canonical=$(readlink -f "$target" 2>/dev/null) || canonical="$target"
+        if [[ ! "$canonical" == "$HOME"* ]]; then
+            error "SAFETY: Refusing to clean '$canonical' — not under \$HOME"
+            return 1
+        fi
         local size
         size=$(du -sh "$target" 2>/dev/null | cut -f1) || size="unknown"
         if [[ "$DRY_RUN" == "true" ]]; then
@@ -288,15 +302,76 @@ clean_mozilla_profile() {
     done
 }
 
+# Deep clean for Chromium-based browsers (cookies, local storage, service workers, web data)
+# Usage: clean_chromium_deep <profile_dir> <app_name>
+clean_chromium_deep() {
+    local profile_dir="$1"
+    local app_name="$2"
+
+    if [[ ! -d "$profile_dir" ]]; then
+        return 0
+    fi
+
+    # Find all profile directories
+    local profiles=()
+    for p in "$profile_dir"/Default "$profile_dir"/Profile\ *; do
+        [[ -d "$p" ]] && profiles+=("$p")
+    done
+
+    for profile in "${profiles[@]}"; do
+        local pname
+        pname=$(basename "$profile")
+        info "Deep cleaning $app_name profile: $pname"
+
+        # Cookie allowlist support
+        local allowlist
+        allowlist=$(get_cookie_allowlist 2>/dev/null || true)
+
+        if [[ -n "$allowlist" && -f "$profile/Cookies" ]]; then
+            info "Cookie allowlist active — preserving allowed domains"
+            # For Chromium, we can't selectively remove from the SQLite DB easily
+            # without python3/sqlite3, so warn and skip if allowlist is set
+            warn "Chromium cookie allowlist requires sqlite3; remove Cookies manually or clear allowlist"
+        else
+            safe_remove "$profile/Cookies" "$pname/Cookies"
+            safe_remove "$profile/Cookies-journal" "$pname/Cookies-journal"
+        fi
+
+        # Local Storage
+        safe_remove "$profile/Local Storage" "$pname/Local Storage"
+
+        # Service Workers (full removal)
+        safe_remove "$profile/Service Worker" "$pname/Service Worker"
+
+        # Web Data (autofill, search engines)
+        safe_remove "$profile/Web Data" "$pname/Web Data"
+        safe_remove "$profile/Web Data-journal" "$pname/Web Data-journal"
+
+        # Network state
+        safe_remove "$profile/Network Action Predictor" "$pname/Network Action Predictor"
+        safe_remove "$profile/TransportSecurity" "$pname/TransportSecurity"
+
+        # Site permissions
+        safe_remove "$profile/Site Characteristics Database" "$pname/Site Characteristics"
+
+        # Media licenses
+        safe_remove "$profile/MediaLicenses" "$pname/MediaLicenses"
+
+        # Platform notifications
+        safe_remove "$profile/Platform Notifications" "$pname/Platform Notifications"
+    done
+}
+
 # Parse common flags
 parse_common_flags() {
-    AUTO_YES=false
-    DRY_RUN=false
+    AUTO_YES=${AUTO_YES:-false}
+    DRY_RUN=${DRY_RUN:-false}
     for arg in "$@"; do
         case "$arg" in
             -y|--yes) AUTO_YES=true ;;
             -n|--dry-run) DRY_RUN=true ;;
             -h|--help) return 1 ;;
+            -V|--version) return 2 ;;
         esac
     done
     export AUTO_YES DRY_RUN

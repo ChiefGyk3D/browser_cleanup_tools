@@ -451,7 +451,7 @@ do_export() {
     local output_file="$4"
     local all_tabs=""
 
-    local collect_browser_tabs() {
+    collect_browser_tabs() {
         local -n paths=$1
         local browser_name="$2"
         local extract_func="$3"
