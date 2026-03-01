@@ -6,7 +6,7 @@ A collection of Bash scripts to clean cache, temporary data, sessions, and other
 
 - **6 new browsers**: LibreWolf, Waterfox, Zen, Vivaldi, Opera, and improved Tor Browser support
 - **Betterfox integration**: Privacy and performance settings sourced from [yokoffing/Betterfox](https://github.com/yokoffing/Betterfox) — Securefox, Fastfox, Smoothfox, and Peskyfox
-- **NVIDIA/GPU acceleration**: GPU-tuned WebRender compositor, VA-API, DMA-BUF, EGL, and refresh rate auto-detection from [nvidia-capture-card](https://github.com/chiefgyk3d/nvidia-capture-card)
+- **NVIDIA/GPU acceleration**: GPU-tuned WebRender compositor, VA-API, DMA-BUF, EGL, and refresh rate auto-detection from [nvidia-display-layout](https://github.com/ChiefGyk3D/nvidia-display-layout)
 - **Chromium hardening**: JSON policy-based privacy hardening for Chromium, Brave, Chrome, Vivaldi, and Opera
 - **Unified profile manager**: Single `profile-manager.sh` replacing separate Firefox/Floorp scripts, with GPG-encrypted backups
 - **Modular library system**: Shared `lib/` modules for paths, profiles, configuration, and logging
