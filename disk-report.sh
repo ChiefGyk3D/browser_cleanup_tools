@@ -148,6 +148,14 @@ main() {
         "$HOME/.floorp" "$HOME/.cache/floorp" \
         "$HOME/.var/app/one.ablaze.floorp/.floorp" "$HOME/.var/app/one.ablaze.floorp/cache/floorp"
 
+    # --- Zen Browser ---
+    # Native profile path comes from lib/paths.sh (not hardcoded like the
+    # other browsers above) because Zen resolves to ~/.zen only if that
+    # legacy dir already exists, otherwise ~/.config/zen (XDG).
+    report_mozilla "Zen Browser" \
+        "${ZEN_PROFILES[native]}" "$HOME/.cache/zen" \
+        "$HOME/.var/app/io.github.zen_browser.zen/.zen" "$HOME/.var/app/io.github.zen_browser.zen/cache/zen"
+
     # --- Chromium ---
     report_chromium "Chromium" \
         "$HOME/.config/chromium" "$HOME/.cache/chromium" \
