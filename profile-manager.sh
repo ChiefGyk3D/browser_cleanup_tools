@@ -445,7 +445,7 @@ do_reset() {
             )
 
             for item in "${remove_items[@]}"; do
-                [[ -e "$path/$item" ]] && rm -rf "$path/$item"
+                [[ -e "$path/$item" ]] && rm -rf "${path:?}/$item"
             done
 
             success "Profile '$name' has been reset"
