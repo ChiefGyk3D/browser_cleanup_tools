@@ -8,7 +8,7 @@ source "$SCRIPT_DIR/lib/paths.sh"
 source "$SCRIPT_DIR/lib/config.sh"
 
 show_help() {
-    cat << EOF
+    cat <<EOF
 Waterfox Cache Cleaner
 
 Usage: $(basename "$0") [OPTIONS]
@@ -39,7 +39,10 @@ clean_waterfox_deep() {
 
 main() {
     check_version_flag "$@"
-    parse_common_flags "$@" || { show_help; exit 0; }
+    parse_common_flags "$@" || {
+        show_help
+        exit 0
+    }
 
     local deep=false
     local filter="$DEFAULT_INSTALL_FILTER"

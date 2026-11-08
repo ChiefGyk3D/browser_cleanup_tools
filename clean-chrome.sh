@@ -32,7 +32,10 @@ EOF
 }
 
 main() {
-    parse_common_flags "$@" || { show_help; exit 0; }
+    parse_common_flags "$@" || {
+        show_help
+        exit 0
+    }
 
     header "Google Chrome Cleanup Tool"
 

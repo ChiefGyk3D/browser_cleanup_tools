@@ -399,11 +399,11 @@ LOWRAM
 
 resolve_browser_key() {
     case "${1,,}" in
-        firefox)   echo "FIREFOX" ;;
-        floorp)    echo "FLOORP" ;;
+        firefox) echo "FIREFOX" ;;
+        floorp) echo "FLOORP" ;;
         librewolf) echo "LIBREWOLF" ;;
-        waterfox)  echo "WATERFOX" ;;
-        zen)       echo "ZEN" ;;
+        waterfox) echo "WATERFOX" ;;
+        zen) echo "ZEN" ;;
         *) echo "${1^^}" ;;
     esac
 }
@@ -456,13 +456,13 @@ apply_to_profile() {
             local temp_file
             temp_file=$(mktemp)
             if grep -q "Performance Optimization" "$user_js" 2>/dev/null; then
-                sed '/Browser Cleanup Tools — Performance Optimization/,/^$/d' "$user_js" > "$temp_file" 2>/dev/null || cp "$user_js" "$temp_file"
+                sed '/Browser Cleanup Tools — Performance Optimization/,/^$/d' "$user_js" >"$temp_file" 2>/dev/null || cp "$user_js" "$temp_file"
                 mv "$temp_file" "$user_js"
             fi
-            echo "" >> "$user_js"
-            generate_user_js "$level" >> "$user_js"
+            echo "" >>"$user_js"
+            generate_user_js "$level" >>"$user_js"
         else
-            generate_user_js "$level" > "$user_js"
+            generate_user_js "$level" >"$user_js"
         fi
         success "Applied ${level} performance settings to profile: $profile_name"
     fi
@@ -512,7 +512,7 @@ show_profile_status() {
         )
 
         for check in "${checks[@]}"; do
-            IFS='|' read -r pref_name label desired <<< "$check"
+            IFS='|' read -r pref_name label desired <<<"$check"
             local current="default"
 
             if [[ -f "$prefs_file" ]]; then
@@ -579,7 +579,7 @@ revert_profile() {
             else
                 local temp_file
                 temp_file=$(mktemp)
-                sed '/Browser Cleanup Tools — Performance Optimization/,$d' "$user_js" > "$temp_file"
+                sed '/Browser Cleanup Tools — Performance Optimization/,$d' "$user_js" >"$temp_file"
                 mv "$temp_file" "$user_js"
                 success "Removed performance settings from profile: $profile_name (privacy settings preserved)"
             fi
@@ -646,7 +646,7 @@ show_gpu_info() {
             local total
             total=$(echo "$vaapi_status" | grep -c "VAProfile" || echo "0")
             if [[ "$total" -gt 5 ]]; then
-                echo -e "    ${DIM}... and $((total-5)) more${NC}"
+                echo -e "    ${DIM}... and $((total - 5)) more${NC}"
             fi
         else
             echo -e "  Status: ${YELLOW}not working${NC}"
@@ -724,7 +724,7 @@ do_benchmark() {
         local total_mem avail_mem used_pct
         total_mem=$(awk '/MemTotal/{print $2}' /proc/meminfo)
         avail_mem=$(awk '/MemAvailable/{print $2}' /proc/meminfo)
-        used_pct=$(( ((total_mem - avail_mem) * 100) / total_mem ))
+        used_pct=$((((total_mem - avail_mem) * 100) / total_mem))
         echo -e "  RAM: $(echo "scale=1; $total_mem/1048576" | bc)G total, $(echo "scale=1; $avail_mem/1048576" | bc)G available (${used_pct}% used)"
         if [[ "$total_mem" -lt 4194304 ]]; then
             echo -e "  ${YELLOW}⚠ Low RAM — consider --low-ram optimization level${NC}"
@@ -765,7 +765,7 @@ do_benchmark() {
 
     for browser_key in "${ALL_BROWSERS[@]}"; do
         local -a procs
-        IFS=' ' read -ra procs <<< "$(get_process_names "$browser_key" 2>/dev/null)"
+        IFS=' ' read -ra procs <<<"$(get_process_names "$browser_key" 2>/dev/null)"
         [[ ${#procs[@]} -eq 0 ]] && continue
 
         for proc in "${procs[@]}"; do
@@ -787,7 +787,7 @@ do_benchmark() {
                 local cpu
                 cpu=$(ps -p "$pid" -o %cpu= 2>/dev/null | xargs || echo "0")
                 cpu_total=$(echo "$cpu_total + $cpu" | bc 2>/dev/null || echo "$cpu_total")
-            done <<< "$pids"
+            done <<<"$pids"
 
             local mem_human
             if [[ "$mem_total_kb" -ge 1048576 ]]; then
@@ -805,7 +805,7 @@ do_benchmark() {
             local display_name
             display_name=$(get_display_name "$browser_key" 2>/dev/null || echo "$proc")
             echo -e "  ${BOLD}${display_name}${NC}: $proc_count processes, ${mem_color}${mem_human} RAM${NC}, ${cpu_total}% CPU"
-            break  # Only show first matching process name per browser
+            break # Only show first matching process name per browser
         done
     done
 
@@ -880,20 +880,23 @@ main() {
 
     for arg in "$@"; do
         case "$arg" in
-            apply|show|status|revert|benchmark|gpu-info|launch-env) command="$arg" ;;
-            --balanced)      LEVEL="balanced" ;;
-            --aggressive)    LEVEL="aggressive" ;;
-            --low-ram)       LEVEL="low-ram" ;;
-            --no-backup)     BACKUP=false ;;
-            -n|--dry-run)    DRY_RUN=true ;;
-            -y|--yes)        AUTO_YES=true ;;
-            --gpu-tweaks)    GPU_TWEAKS="true" ;;
+            apply | show | status | revert | benchmark | gpu-info | launch-env) command="$arg" ;;
+            --balanced) LEVEL="balanced" ;;
+            --aggressive) LEVEL="aggressive" ;;
+            --low-ram) LEVEL="low-ram" ;;
+            --no-backup) BACKUP=false ;;
+            -n | --dry-run) DRY_RUN=true ;;
+            -y | --yes) AUTO_YES=true ;;
+            --gpu-tweaks) GPU_TWEAKS="true" ;;
             --no-gpu-tweaks) GPU_TWEAKS="false" ;;
             --scroll-sharpen) SCROLL_PRESET="sharpen" ;;
             --scroll-instant) SCROLL_PRESET="instant" ;;
-            --scroll-smooth)  SCROLL_PRESET="smooth" ;;
+            --scroll-smooth) SCROLL_PRESET="smooth" ;;
             --scroll-natural) SCROLL_PRESET="natural" ;;
-            -h|--help)       show_help; exit 0 ;;
+            -h | --help)
+                show_help
+                exit 0
+                ;;
         esac
     done
 
@@ -921,16 +924,19 @@ main() {
             header "Applying ${LEVEL} Performance Optimization"
             echo -e "${BOLD}Level: ${LEVEL}${NC}"
             case "$LEVEL" in
-                balanced)   echo -e "Moderate optimizations, safe for all hardware" ;;
+                balanced) echo -e "Moderate optimizations, safe for all hardware" ;;
                 aggressive) echo -e "${YELLOW}Pushing limits — max rendering and network performance${NC}" ;;
-                low-ram)    echo -e "${CYAN}Optimized for systems with ≤ 4 GB RAM${NC}" ;;
+                low-ram) echo -e "${CYAN}Optimized for systems with ≤ 4 GB RAM${NC}" ;;
             esac
             [[ "$GPU_TWEAKS" == "true" ]] && echo -e "GPU tweaks: ${GREEN}enabled${NC}"
             [[ -n "$SCROLL_PRESET" ]] && echo -e "Scroll preset: ${CYAN}${SCROLL_PRESET}${NC}"
             echo ""
 
             if [[ "$AUTO_YES" != "true" && "$DRY_RUN" != "true" ]]; then
-                confirm "Apply ${LEVEL} performance settings?" || { info "Cancelled."; exit 0; }
+                confirm "Apply ${LEVEL} performance settings?" || {
+                    info "Cancelled."
+                    exit 0
+                }
             fi
 
             for_each_profile apply_to_profile "$LEVEL"
@@ -950,7 +956,10 @@ main() {
         revert)
             header "Reverting Performance Optimization"
             if [[ "$AUTO_YES" != "true" && "$DRY_RUN" != "true" ]]; then
-                confirm "Revert performance settings (restore original user.js)?" || { info "Cancelled."; exit 0; }
+                confirm "Revert performance settings (restore original user.js)?" || {
+                    info "Cancelled."
+                    exit 0
+                }
             fi
             for_each_profile revert_profile
             echo -e "\n${DIM}Restart your browser for changes to take effect.${NC}"

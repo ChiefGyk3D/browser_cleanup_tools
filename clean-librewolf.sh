@@ -8,7 +8,7 @@ source "$SCRIPT_DIR/lib/paths.sh"
 source "$SCRIPT_DIR/lib/config.sh"
 
 show_help() {
-    cat << EOF
+    cat <<EOF
 LibreWolf Cache Cleaner
 
 Usage: $(basename "$0") [OPTIONS]
@@ -41,7 +41,10 @@ clean_librewolf_deep() {
 
 main() {
     check_version_flag "$@"
-    parse_common_flags "$@" || { show_help; exit 0; }
+    parse_common_flags "$@" || {
+        show_help
+        exit 0
+    }
 
     local deep=false
     local filter="$DEFAULT_INSTALL_FILTER"
@@ -51,8 +54,14 @@ main() {
             --deep) deep=true ;;
             --native-only) filter="native-only" ;;
             --flatpak-only) filter="flatpak-only" ;;
-            --max-age) shift; MAX_CACHE_AGE_DAYS="${2:-$MAX_CACHE_AGE_DAYS}" ;;
-            --min-size) shift; MIN_CACHE_SIZE_MB="${2:-$MIN_CACHE_SIZE_MB}" ;;
+            --max-age)
+                shift
+                MAX_CACHE_AGE_DAYS="${2:-$MAX_CACHE_AGE_DAYS}"
+                ;;
+            --min-size)
+                shift
+                MIN_CACHE_SIZE_MB="${2:-$MIN_CACHE_SIZE_MB}"
+                ;;
         esac
     done
 

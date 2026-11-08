@@ -229,7 +229,7 @@ declare -gA BROWSER_DISPLAY_NAMES=(
 # Get the profiles associative array name for a browser
 # Usage: get_profiles_var "FIREFOX" => "FIREFOX_PROFILES"
 get_profiles_var() { echo "${1}_PROFILES"; }
-get_cache_var()    { echo "${1}_CACHE"; }
+get_cache_var() { echo "${1}_CACHE"; }
 
 # Get profile path for a browser + install type
 # Usage: get_profile_path "FIREFOX" "native"
@@ -311,9 +311,9 @@ get_available_installs() {
     for install_type in "${!profiles_ref[@]}"; do
         # Apply filter
         case "$filter" in
-            native-only)  [[ "$install_type" != "native" ]] && continue ;;
+            native-only) [[ "$install_type" != "native" ]] && continue ;;
             flatpak-only) [[ "$install_type" != "flatpak" ]] && continue ;;
-            snap-only)    [[ "$install_type" != "snap" ]] && continue ;;
+            snap-only) [[ "$install_type" != "snap" ]] && continue ;;
         esac
 
         local path="${profiles_ref[$install_type]}"

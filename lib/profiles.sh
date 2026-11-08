@@ -33,13 +33,13 @@ parse_profiles_ini() {
             name="" path="" is_relative="1" is_default="0"
         elif $in_profile; then
             case "$line" in
-                Name=*)       name="${line#Name=}" ;;
-                Path=*)       path="${line#Path=}" ;;
+                Name=*) name="${line#Name=}" ;;
+                Path=*) path="${line#Path=}" ;;
                 IsRelative=*) is_relative="${line#IsRelative=}" ;;
-                Default=1)    is_default="1" ;;
+                Default=1) is_default="1" ;;
             esac
         fi
-    done < "$ini_file"
+    done <"$ini_file"
     # Emit last profile
     if $in_profile && [[ -n "$name" && -n "$path" ]]; then
         echo "${name}|${path}|${is_relative}|${is_default}"
@@ -74,9 +74,9 @@ find_mozilla_profiles() {
     for install_type in "${!profiles_ref[@]}"; do
         # Apply install filter
         case "$filter" in
-            native-only)  [[ "$install_type" != "native" ]] && continue ;;
+            native-only) [[ "$install_type" != "native" ]] && continue ;;
             flatpak-only) [[ "$install_type" != "flatpak" ]] && continue ;;
-            snap-only)    [[ "$install_type" != "snap" ]] && continue ;;
+            snap-only) [[ "$install_type" != "snap" ]] && continue ;;
         esac
 
         local base_dir="${profiles_ref[$install_type]}"
@@ -122,9 +122,9 @@ find_chromium_profiles() {
 
     for install_type in "${!profiles_ref[@]}"; do
         case "$filter" in
-            native-only)  [[ "$install_type" != "native" ]] && continue ;;
+            native-only) [[ "$install_type" != "native" ]] && continue ;;
             flatpak-only) [[ "$install_type" != "flatpak" ]] && continue ;;
-            snap-only)    [[ "$install_type" != "snap" ]] && continue ;;
+            snap-only) [[ "$install_type" != "snap" ]] && continue ;;
         esac
 
         local base_dir="${profiles_ref[$install_type]}"
@@ -159,8 +159,8 @@ find_profiles() {
         find_chromium_profiles "$browser" "$filter"
     else
         # Try Mozilla first, then Chromium
-        find_mozilla_profiles "$browser" "$filter" 2>/dev/null || \
-        find_chromium_profiles "$browser" "$filter" 2>/dev/null
+        find_mozilla_profiles "$browser" "$filter" 2>/dev/null ||
+            find_chromium_profiles "$browser" "$filter" 2>/dev/null
     fi
 }
 
@@ -245,7 +245,10 @@ backup_profile() {
     local profile_name="$3"
     local encrypt="${4:-false}"
 
-    [[ ! -d "$profile_path" ]] && { error "Profile not found: $profile_path"; return 1; }
+    [[ ! -d "$profile_path" ]] && {
+        error "Profile not found: $profile_path"
+        return 1
+    }
 
     mkdir -p "$backup_dir"
     local timestamp
@@ -299,7 +302,10 @@ restore_profile() {
     local archive_path="$1"
     local target_dir="$2"
 
-    [[ ! -f "$archive_path" ]] && { error "Backup not found: $archive_path"; return 1; }
+    [[ ! -f "$archive_path" ]] && {
+        error "Backup not found: $archive_path"
+        return 1
+    }
 
     # Handle encrypted backups
     if [[ "$archive_path" == *.gpg ]]; then
@@ -332,7 +338,10 @@ restore_profile() {
 # Usage: list_backups "/path/to/backup/dir"
 list_backups() {
     local backup_dir="$1"
-    [[ ! -d "$backup_dir" ]] && { info "No backups found in $backup_dir"; return 1; }
+    [[ ! -d "$backup_dir" ]] && {
+        info "No backups found in $backup_dir"
+        return 1
+    }
 
     local count=0
     while IFS= read -r -d '' archive; do
@@ -341,8 +350,8 @@ list_backups() {
         size=$(get_size "$archive")
         date=$(stat -c '%y' "$archive" 2>/dev/null | cut -d. -f1)
         echo "  $name ($size, $date)"
-        ((count++))
-    done < <(find "$backup_dir" -name "*.tar.gz" -o -name "*.tar.gz.gpg" -print0 2>/dev/null | sort -z)
+        count=$((count + 1))
+    done < <(find "$backup_dir" \( -name "*.tar.gz" -o -name "*.tar.gz.gpg" \) -print0 2>/dev/null | sort -z)
 
     [[ "$count" -eq 0 ]] && info "No backups found in $backup_dir"
     return 0

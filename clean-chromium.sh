@@ -51,22 +51,25 @@ main() {
     local flatpak_only=false
     local snap_only=false
 
-    parse_common_flags "$@" || { show_help; exit 0; }
+    parse_common_flags "$@" || {
+        show_help
+        exit 0
+    }
 
     for arg in "$@"; do
         case "$arg" in
-            --native-only)  native_only=true ;;
+            --native-only) native_only=true ;;
             --flatpak-only) flatpak_only=true ;;
-            --snap-only)    snap_only=true ;;
+            --snap-only) snap_only=true ;;
         esac
     done
 
     header "Chromium Cleanup Tool"
 
     # Check if any Chromium installation exists before checking if running
-    if [[ ! -d "$NATIVE_PROFILE_DIR" ]] \
-        && ! flatpak_installed "$FLATPAK_APP_ID" \
-        && ! snap_installed "$SNAP_NAME"; then
+    if [[ ! -d "$NATIVE_PROFILE_DIR" ]] &&
+        ! flatpak_installed "$FLATPAK_APP_ID" &&
+        ! snap_installed "$SNAP_NAME"; then
         warn "Chromium not found on this system"
         exit 0
     fi

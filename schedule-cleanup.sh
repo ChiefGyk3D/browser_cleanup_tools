@@ -47,20 +47,20 @@ EOF
 # Convert interval name to systemd OnCalendar spec
 interval_to_calendar() {
     case "$1" in
-        daily)   echo "daily" ;;
-        weekly)  echo "weekly" ;;
+        daily) echo "daily" ;;
+        weekly) echo "weekly" ;;
         monthly) echo "monthly" ;;
-        *)       echo "$1" ;;  # Allow raw OnCalendar specs
+        *) echo "$1" ;; # Allow raw OnCalendar specs
     esac
 }
 
 # Convert interval to cron schedule
 interval_to_cron() {
     case "$1" in
-        daily)   echo "0 3 * * *" ;;      # 3 AM daily
-        weekly)  echo "0 3 * * 0" ;;      # 3 AM Sunday
-        monthly) echo "0 3 1 * *" ;;      # 3 AM 1st of month
-        *)       echo "0 3 * * 0" ;;      # Default weekly
+        daily) echo "0 3 * * *" ;;   # 3 AM daily
+        weekly) echo "0 3 * * 0" ;;  # 3 AM Sunday
+        monthly) echo "0 3 1 * *" ;; # 3 AM 1st of month
+        *) echo "0 3 * * 0" ;;       # Default weekly
     esac
 }
 
@@ -73,7 +73,7 @@ install_systemd() {
     mkdir -p "$SYSTEMD_USER_DIR"
 
     # Create the service unit
-    cat > "$SYSTEMD_USER_DIR/${SERVICE_NAME}.service" <<EOF
+    cat >"$SYSTEMD_USER_DIR/${SERVICE_NAME}.service" <<EOF
 [Unit]
 Description=Browser Cleanup Tools - Automatic Cache Cleaning
 Documentation=https://github.com/chiefgyk3d/Browser_Cleanup_Tools
@@ -90,7 +90,7 @@ WantedBy=default.target
 EOF
 
     # Create the timer unit
-    cat > "$SYSTEMD_USER_DIR/${SERVICE_NAME}.timer" <<EOF
+    cat >"$SYSTEMD_USER_DIR/${SERVICE_NAME}.timer" <<EOF
 [Unit]
 Description=Browser Cleanup Tools - Scheduled Timer
 Documentation=https://github.com/chiefgyk3d/Browser_Cleanup_Tools
@@ -139,7 +139,11 @@ install_cron() {
     fi
 
     # Add new cron entry
-    (crontab -l 2>/dev/null; echo "# Browser Cleanup Tools - automatic cache cleaning"; echo "$cron_line") | crontab -
+    (
+        crontab -l 2>/dev/null
+        echo "# Browser Cleanup Tools - automatic cache cleaning"
+        echo "$cron_line"
+    ) | crontab -
 
     success "Cron job installed!"
     echo ""
@@ -226,11 +230,14 @@ main() {
 
     for arg in "$@"; do
         case "$arg" in
-            install|uninstall|status|run-now) command="$arg" ;;
+            install | uninstall | status | run-now) command="$arg" ;;
             --use-cron) use_cron=true ;;
-            --deep)     extra_args="$extra_args --deep" ;;
+            --deep) extra_args="$extra_args --deep" ;;
             --with-oauth) extra_args="$extra_args --thunderbird-oauth" ;;
-            -h|--help)  show_help; exit 0 ;;
+            -h | --help)
+                show_help
+                exit 0
+                ;;
         esac
     done
 
@@ -243,7 +250,7 @@ main() {
         prev="$arg"
     done
 
-    extra_args=$(echo "$extra_args" | xargs)  # trim whitespace
+    extra_args=$(echo "$extra_args" | xargs) # trim whitespace
 
     case "$command" in
         install)

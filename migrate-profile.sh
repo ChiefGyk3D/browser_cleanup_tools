@@ -70,7 +70,7 @@ parse_profiles_ini() {
             IsRelative) is_relative="$value" ;;
             Default) is_default="$value" ;;
         esac
-    done < "$ini_file"
+    done <"$ini_file"
     if [[ -n "$name" ]]; then
         echo "${name}|${path}|${is_relative}|${is_default}"
     fi
@@ -149,7 +149,7 @@ select_profile() {
         local size
         size=$(du -sh "${paths[$i]}" 2>/dev/null | cut -f1)
         local default_marker=""
-        IFS='|' read -r _ _ _ is_default <<< "${profiles[$i]}"
+        IFS='|' read -r _ _ _ is_default <<<"${profiles[$i]}"
         if [[ "$is_default" == "1" ]]; then
             default_marker=" ${GREEN}[DEFAULT]${NC}"
         fi
@@ -174,19 +174,38 @@ main() {
     local target_type=""
     local new_profile_name=""
 
-    parse_common_flags "$@" || { show_help; exit 0; }
+    parse_common_flags "$@" || {
+        show_help
+        exit 0
+    }
 
     local prev=""
     for arg in "$@"; do
         case "$prev" in
-            --source-profile) source_profile="$arg"; prev=""; continue ;;
-            --source-type)    source_type="$arg"; prev=""; continue ;;
-            --target-type)    target_type="$arg"; prev=""; continue ;;
-            --profile-name)   new_profile_name="$arg"; prev=""; continue ;;
+            --source-profile)
+                source_profile="$arg"
+                prev=""
+                continue
+                ;;
+            --source-type)
+                source_type="$arg"
+                prev=""
+                continue
+                ;;
+            --target-type)
+                target_type="$arg"
+                prev=""
+                continue
+                ;;
+            --profile-name)
+                new_profile_name="$arg"
+                prev=""
+                continue
+                ;;
         esac
         case "$arg" in
-            firefox-to-floorp|floorp-to-firefox) direction="$arg" ;;
-            --source-profile|--source-type|--target-type|--profile-name) prev="$arg" ;;
+            firefox-to-floorp | floorp-to-firefox) direction="$arg" ;;
+            --source-profile | --source-type | --target-type | --profile-name) prev="$arg" ;;
         esac
     done
 
@@ -233,7 +252,7 @@ main() {
         exit 1
     }
     local src_install_type src_dir
-    IFS='|' read -r src_install_type src_dir <<< "$source_result"
+    IFS='|' read -r src_install_type src_dir <<<"$source_result"
     info "Source: $source_app ($src_install_type) at $src_dir"
 
     # Find target installation
@@ -243,14 +262,14 @@ main() {
         exit 1
     }
     local tgt_install_type tgt_dir
-    IFS='|' read -r tgt_install_type tgt_dir <<< "$target_result"
+    IFS='|' read -r tgt_install_type tgt_dir <<<"$target_result"
     info "Target: $target_app ($tgt_install_type) at $tgt_dir"
 
     # Select source profile
     local profile_result
     profile_result=$(select_profile "$src_dir" "$source_app" "$source_profile") || exit 1
     local src_profile_path src_profile_name
-    IFS='|' read -r src_profile_path src_profile_name <<< "$profile_result"
+    IFS='|' read -r src_profile_path src_profile_name <<<"$profile_result"
 
     info "Migrating profile: $src_profile_name"
 
@@ -288,14 +307,14 @@ main() {
         if [[ -f "$ini_file" ]]; then
             next_num=$(grep -c '^\[Profile' "$ini_file" 2>/dev/null || echo "0")
         else
-            cat > "$ini_file" <<INIEOF
+            cat >"$ini_file" <<INIEOF
 [General]
 StartWithLastProfile=1
 
 INIEOF
         fi
 
-        cat >> "$ini_file" <<INIEOF
+        cat >>"$ini_file" <<INIEOF
 [Profile${next_num}]
 Name=${new_profile_name}
 IsRelative=1
@@ -310,7 +329,7 @@ INIEOF
 
         case "$target_app" in
             Firefox) info "Or run: firefox -P \"$new_profile_name\"" ;;
-            Floorp)  info "Or run: floorp -P \"$new_profile_name\"" ;;
+            Floorp) info "Or run: floorp -P \"$new_profile_name\"" ;;
         esac
     fi
 }
