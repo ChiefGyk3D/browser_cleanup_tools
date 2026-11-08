@@ -25,11 +25,11 @@ NC='\033[0m' # No Color
 DRY_RUN="${DRY_RUN:-false}"
 
 # Print helpers
-info()    { echo -e "${BLUE}[INFO]${NC} $*"; }
+info() { echo -e "${BLUE}[INFO]${NC} $*"; }
 success() { echo -e "${GREEN}[OK]${NC} $*"; }
-warn()    { echo -e "${YELLOW}[WARN]${NC} $*"; }
-error()   { echo -e "${RED}[ERROR]${NC} $*"; }
-header()  { echo -e "\n${BOLD}${CYAN}=== $* ===${NC}\n"; }
+warn() { echo -e "${YELLOW}[WARN]${NC} $*"; }
+error() { echo -e "${RED}[ERROR]${NC} $*"; }
+header() { echo -e "\n${BOLD}${CYAN}=== $* ===${NC}\n"; }
 dry_run() { echo -e "${MAGENTA}[DRY-RUN]${NC} Would remove: $*"; }
 
 # Prompt for confirmation (defaults to No unless -y flag was passed)
@@ -60,7 +60,7 @@ snap_installed() {
 app_is_running() {
     local process_name="$1"
     # Exact process name match (most reliable)
-    pgrep -x "$process_name" > /dev/null 2>&1 && return 0
+    pgrep -x "$process_name" >/dev/null 2>&1 && return 0
     # Full command-line match, but skip shell interpreters
     # (prevents matching our own "bash clean-firefox.sh" etc.)
     local pids
@@ -73,7 +73,7 @@ app_is_running() {
         local exe
         exe=$(readlink "/proc/$pid/exe" 2>/dev/null) || continue
         case "$exe" in
-            */bash|*/sh|*/dash|*/zsh|*/fish|*/grep|*/pgrep) continue ;;
+            */bash | */sh | */dash | */zsh | */fish | */grep | */pgrep) continue ;;
         esac
         return 0
     done
@@ -368,10 +368,10 @@ parse_common_flags() {
     DRY_RUN=${DRY_RUN:-false}
     for arg in "$@"; do
         case "$arg" in
-            -y|--yes) AUTO_YES=true ;;
-            -n|--dry-run) DRY_RUN=true ;;
-            -h|--help) return 1 ;;
-            -V|--version) return 2 ;;
+            -y | --yes) AUTO_YES=true ;;
+            -n | --dry-run) DRY_RUN=true ;;
+            -h | --help) return 1 ;;
+            -V | --version) return 2 ;;
         esac
     done
     export AUTO_YES DRY_RUN

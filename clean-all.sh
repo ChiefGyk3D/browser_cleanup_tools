@@ -52,18 +52,21 @@ main() {
     local select_mode=false
     local extra_args=()
 
-    parse_common_flags "$@" || { show_help; exit 0; }
+    parse_common_flags "$@" || {
+        show_help
+        exit 0
+    }
 
     for arg in "$@"; do
         case "$arg" in
-            --select)            select_mode=true ;;
-            --deep)              extra_args+=("--deep") ;;
+            --select) select_mode=true ;;
+            --deep) extra_args+=("--deep") ;;
             --thunderbird-oauth) extra_args+=("--oauth") ;;
-            --native-only)       extra_args+=("--native-only") ;;
-            --flatpak-only)      extra_args+=("--flatpak-only") ;;
-            --snap-only)         extra_args+=("--snap-only") ;;
-            -y|--yes)            extra_args+=("-y") ;;
-            -n|--dry-run)        extra_args+=("--dry-run") ;;
+            --native-only) extra_args+=("--native-only") ;;
+            --flatpak-only) extra_args+=("--flatpak-only") ;;
+            --snap-only) extra_args+=("--snap-only") ;;
+            -y | --yes) extra_args+=("-y") ;;
+            -n | --dry-run) extra_args+=("--dry-run") ;;
         esac
     done
 

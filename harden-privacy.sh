@@ -397,11 +397,11 @@ PARANOID
 # Resolve CLI browser name to internal key
 resolve_browser_key() {
     case "${1,,}" in
-        firefox)   echo "FIREFOX" ;;
-        floorp)    echo "FLOORP" ;;
+        firefox) echo "FIREFOX" ;;
+        floorp) echo "FLOORP" ;;
         librewolf) echo "LIBREWOLF" ;;
-        waterfox)  echo "WATERFOX" ;;
-        zen)       echo "ZEN" ;;
+        waterfox) echo "WATERFOX" ;;
+        zen) echo "ZEN" ;;
         *) echo "${1^^}" ;;
     esac
 }
@@ -446,7 +446,7 @@ apply_to_profile() {
     if [[ "$DRY_RUN" == "true" ]]; then
         echo -e "${MAGENTA}[DRY-RUN]${NC} Would write ${level} privacy settings to $user_js"
     else
-        generate_user_js "$level" > "$user_js"
+        generate_user_js "$level" >"$user_js"
         success "Applied ${level} privacy settings to profile: $profile_name"
     fi
 }
@@ -494,7 +494,7 @@ show_profile_status() {
         )
 
         for check in "${checks[@]}"; do
-            IFS='|' read -r pref_name label desired <<< "$check"
+            IFS='|' read -r pref_name label desired <<<"$check"
             local current
             current=$(grep -oP "user_pref\\(\"$pref_name\",\\s*\\K[^)]*" "$prefs_file" 2>/dev/null | tr -d ' "' || echo "default")
             # Also check user.js
@@ -589,15 +589,27 @@ main() {
     # Parse arguments
     for arg in "$@"; do
         case "$arg" in
-            apply|show|status|revert) command="$arg" ;;
+            apply | show | status | revert) command="$arg" ;;
             --standard) LEVEL="standard" ;;
-            --strict)   LEVEL="strict" ;;
-            --paranoid)  LEVEL="paranoid" ;;
+            --strict) LEVEL="strict" ;;
+            --paranoid) LEVEL="paranoid" ;;
             --no-backup) BACKUP=false ;;
-            -n|--dry-run) DRY_RUN=true; export DRY_RUN ;;
-            -y|--yes)    AUTO_YES=true; export AUTO_YES ;;
-            -V|--version) show_version; exit 0 ;;
-            -h|--help)   show_help; exit 0 ;;
+            -n | --dry-run)
+                DRY_RUN=true
+                export DRY_RUN
+                ;;
+            -y | --yes)
+                AUTO_YES=true
+                export AUTO_YES
+                ;;
+            -V | --version)
+                show_version
+                exit 0
+                ;;
+            -h | --help)
+                show_help
+                exit 0
+                ;;
         esac
     done
 
@@ -626,12 +638,15 @@ main() {
             echo -e "${BOLD}Level: ${LEVEL}${NC}"
             case "$LEVEL" in
                 standard) echo -e "Balanced privacy — minimal breakage\n" ;;
-                strict)   echo -e "${YELLOW}Aggressive privacy — some sites may break${NC}\n" ;;
-                paranoid)  echo -e "${RED}Maximum privacy — significant site breakage expected${NC}\n" ;;
+                strict) echo -e "${YELLOW}Aggressive privacy — some sites may break${NC}\n" ;;
+                paranoid) echo -e "${RED}Maximum privacy — significant site breakage expected${NC}\n" ;;
             esac
 
             if [[ "$AUTO_YES" != "true" && "$DRY_RUN" != "true" ]]; then
-                confirm "Apply ${LEVEL} privacy settings?" || { info "Cancelled."; exit 0; }
+                confirm "Apply ${LEVEL} privacy settings?" || {
+                    info "Cancelled."
+                    exit 0
+                }
             fi
 
             local applied=0
@@ -657,7 +672,10 @@ main() {
             header "Reverting Privacy Hardening"
 
             if [[ "$AUTO_YES" != "true" && "$DRY_RUN" != "true" ]]; then
-                confirm "Revert privacy settings (restore original user.js)?" || { info "Cancelled."; exit 0; }
+                confirm "Revert privacy settings (restore original user.js)?" || {
+                    info "Cancelled."
+                    exit 0
+                }
             fi
 
             while IFS= read -r browser_key; do

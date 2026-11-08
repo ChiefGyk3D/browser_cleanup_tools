@@ -148,7 +148,7 @@ audit_mozilla_browser() {
                         profile_dirs+=("$base_dir/$rel_path")
                     fi
                 fi
-            done < "$profiles_ini"
+            done <"$profiles_ini"
         fi
 
         # Also scan for any directory with extensions.json
@@ -197,7 +197,7 @@ audit_mozilla_browser() {
                         echo "\"$app_name\",\"$install_type\",\"$profile_name\",\"$ext_id\",\"$(echo "$name" | sed 's/"/""/g')\",\"$version\",\"$ext_type\",\"$status\",\"$(echo "$creator" | sed 's/"/""/g')\",\"$(echo "$homepage" | sed 's/"/""/g')\""
                         ;;
                 esac
-            done <<< "$extensions"
+            done <<<"$extensions"
         done
     done
 
@@ -356,7 +356,7 @@ audit_chromium_browser() {
                         echo "\"$app_name\",\"$install_type\",\"$profile_name\",\"$ext_id\",\"$(echo "$name" | sed 's/"/""/g')\",\"$version\",\"$ext_type\",\"$status\",\"\",\"\""
                         ;;
                 esac
-            done <<< "$extensions"
+            done <<<"$extensions"
         done
     done
 
@@ -372,10 +372,13 @@ main() {
 
     for arg in "$@"; do
         case "$arg" in
-            --json)    OUTPUT_FORMAT="json" ;;
-            --csv)     OUTPUT_FORMAT="csv" ;;
+            --json) OUTPUT_FORMAT="json" ;;
+            --csv) OUTPUT_FORMAT="csv" ;;
             --details) SHOW_DETAILS=true ;;
-            -h|--help) show_help; exit 0 ;;
+            -h | --help)
+                show_help
+                exit 0
+                ;;
         esac
     done
 
@@ -390,7 +393,6 @@ main() {
 
     if [[ "$OUTPUT_FORMAT" == "json" ]]; then
         echo "["
-        local first=true
     elif [[ "$OUTPUT_FORMAT" == "csv" ]]; then
         echo "\"Browser\",\"Install Type\",\"Profile\",\"Extension ID\",\"Name\",\"Version\",\"Type\",\"Status\",\"Creator\",\"Homepage\""
     else
@@ -409,7 +411,7 @@ main() {
             while IFS= read -r line; do
                 [[ -z "$line" ]] && continue
                 json_entries+=("$line")
-            done <<< "$output"
+            done <<<"$output"
         else
             echo "$output"
         fi
@@ -425,7 +427,7 @@ main() {
             while IFS= read -r line; do
                 [[ -z "$line" ]] && continue
                 json_entries+=("$line")
-            done <<< "$output"
+            done <<<"$output"
         else
             echo "$output"
         fi
@@ -441,7 +443,7 @@ main() {
             while IFS= read -r line; do
                 [[ -z "$line" ]] && continue
                 json_entries+=("$line")
-            done <<< "$output"
+            done <<<"$output"
         else
             echo "$output"
         fi
@@ -457,7 +459,7 @@ main() {
             while IFS= read -r line; do
                 [[ -z "$line" ]] && continue
                 json_entries+=("$line")
-            done <<< "$output"
+            done <<<"$output"
         else
             echo "$output"
         fi
@@ -473,7 +475,7 @@ main() {
             while IFS= read -r line; do
                 [[ -z "$line" ]] && continue
                 json_entries+=("$line")
-            done <<< "$output"
+            done <<<"$output"
         else
             echo "$output"
         fi

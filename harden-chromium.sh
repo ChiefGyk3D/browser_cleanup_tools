@@ -17,7 +17,7 @@ source "$SCRIPT_DIR/lib/config.sh"
 POLICY_FILENAME="browser-cleanup-tools-privacy.json"
 
 show_help() {
-    cat << EOF
+    cat <<EOF
 Chromium Privacy Hardening
 
 Applies privacy policies to Chromium-based browsers via JSON policy files.
@@ -65,7 +65,7 @@ generate_policy_json() {
 
     case "$level" in
         standard)
-            cat << 'POLICY'
+            cat <<'POLICY'
 {
     "_comment": "Browser Cleanup Tools - Standard Privacy Hardening",
     "_level": "standard",
@@ -117,7 +117,7 @@ generate_policy_json() {
 POLICY
             ;;
         strict)
-            cat << 'POLICY'
+            cat <<'POLICY'
 {
     "_comment": "Browser Cleanup Tools - Strict Privacy Hardening",
     "_level": "strict",
@@ -191,7 +191,7 @@ POLICY
 POLICY
             ;;
         paranoid)
-            cat << 'POLICY'
+            cat <<'POLICY'
 {
     "_comment": "Browser Cleanup Tools - Paranoid Privacy Hardening",
     "_level": "paranoid",
@@ -315,7 +315,10 @@ do_apply() {
         local profiles_var="${browser}_PROFILES"
         local -n profiles_ref="$profiles_var"
         for install_type in "${!profiles_ref[@]}"; do
-            [[ -d "${profiles_ref[$install_type]}" ]] && { has_install=true; break; }
+            [[ -d "${profiles_ref[$install_type]}" ]] && {
+                has_install=true
+                break
+            }
         done
         $has_install || continue
 
@@ -328,7 +331,10 @@ do_apply() {
             policy_dir=$(get_policy_dir "$browser")
         fi
 
-        [[ -z "$policy_dir" ]] && { warn "No policy directory known for $display_name"; continue; }
+        [[ -z "$policy_dir" ]] && {
+            warn "No policy directory known for $display_name"
+            continue
+        }
 
         if [[ "$DRY_RUN" == "true" ]]; then
             dry_run "Would write policy to: $policy_dir/$POLICY_FILENAME"
@@ -339,14 +345,17 @@ do_apply() {
             mkdir -p "$policy_dir"
         else
             if [[ ! -d "$policy_dir" ]]; then
-                sudo mkdir -p "$policy_dir" || { error "Cannot create $policy_dir (try --user-only)"; continue; }
+                sudo mkdir -p "$policy_dir" || {
+                    error "Cannot create $policy_dir (try --user-only)"
+                    continue
+                }
             fi
         fi
 
         if [[ "$user_only" == "true" ]]; then
-            echo "$policy_content" > "$policy_dir/$POLICY_FILENAME"
+            echo "$policy_content" >"$policy_dir/$POLICY_FILENAME"
         else
-            echo "$policy_content" | sudo tee "$policy_dir/$POLICY_FILENAME" > /dev/null || {
+            echo "$policy_content" | sudo tee "$policy_dir/$POLICY_FILENAME" >/dev/null || {
                 error "Cannot write to $policy_dir (try --user-only)"
                 continue
             }
@@ -385,7 +394,10 @@ do_status() {
         local profiles_var="${browser}_PROFILES"
         local -n profiles_ref="$profiles_var"
         for install_type in "${!profiles_ref[@]}"; do
-            [[ -d "${profiles_ref[$install_type]}" ]] && { has_install=true; break; }
+            [[ -d "${profiles_ref[$install_type]}" ]] && {
+                has_install=true
+                break
+            }
         done
         $has_install || continue
 
@@ -480,17 +492,52 @@ main() {
 
     while [[ $# -gt 0 ]]; do
         case "$1" in
-            apply|show|status|revert) command="$1"; shift ;;
-            --standard)  level="standard"; shift ;;
-            --strict)    level="strict"; shift ;;
-            --paranoid)  level="paranoid"; shift ;;
-            --browser)   target_browser=$(resolve_browser "${2:-}" 2>/dev/null || echo "${2^^}"); shift 2 ;;
-            --user-only) user_only="true"; shift ;;
-            --system)    user_only="false"; shift ;;
-            -y|--yes)    AUTO_YES=true; export AUTO_YES; shift ;;
-            -n|--dry-run) DRY_RUN=true; export DRY_RUN; shift ;;
-            -h|--help)   show_help; exit 0 ;;
-            -V|--version) show_version; exit 0 ;;
+            apply | show | status | revert)
+                command="$1"
+                shift
+                ;;
+            --standard)
+                level="standard"
+                shift
+                ;;
+            --strict)
+                level="strict"
+                shift
+                ;;
+            --paranoid)
+                level="paranoid"
+                shift
+                ;;
+            --browser)
+                target_browser=$(resolve_browser "${2:-}" 2>/dev/null || echo "${2^^}")
+                shift 2
+                ;;
+            --user-only)
+                user_only="true"
+                shift
+                ;;
+            --system)
+                user_only="false"
+                shift
+                ;;
+            -y | --yes)
+                AUTO_YES=true
+                export AUTO_YES
+                shift
+                ;;
+            -n | --dry-run)
+                DRY_RUN=true
+                export DRY_RUN
+                shift
+                ;;
+            -h | --help)
+                show_help
+                exit 0
+                ;;
+            -V | --version)
+                show_version
+                exit 0
+                ;;
             *) shift ;;
         esac
     done
@@ -499,10 +546,10 @@ main() {
     resolve_browser_cli() {
         case "${1,,}" in
             chromium) echo "CHROMIUM" ;;
-            brave)    echo "BRAVE" ;;
-            chrome|google-chrome) echo "CHROME" ;;
-            vivaldi)  echo "VIVALDI" ;;
-            opera)    echo "OPERA" ;;
+            brave) echo "BRAVE" ;;
+            chrome | google-chrome) echo "CHROME" ;;
+            vivaldi) echo "VIVALDI" ;;
+            opera) echo "OPERA" ;;
             *) echo "${1^^}" ;;
         esac
     }
@@ -512,11 +559,14 @@ main() {
     fi
 
     case "$command" in
-        apply)  do_apply "$level" "$target_browser" "$user_only" ;;
-        show)   do_show "$level" ;;
+        apply) do_apply "$level" "$target_browser" "$user_only" ;;
+        show) do_show "$level" ;;
         status) do_status "$target_browser" ;;
         revert) do_revert "$target_browser" "$user_only" ;;
-        *)      show_help; exit 1 ;;
+        *)
+            show_help
+            exit 1
+            ;;
     esac
 }
 
