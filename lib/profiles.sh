@@ -350,7 +350,7 @@ list_backups() {
         size=$(get_size "$archive")
         date=$(stat -c '%y' "$archive" 2>/dev/null | cut -d. -f1)
         echo "  $name ($size, $date)"
-        ((count++))
+        count=$((count + 1))
     done < <(find "$backup_dir" \( -name "*.tar.gz" -o -name "*.tar.gz.gpg" \) -print0 2>/dev/null | sort -z)
 
     [[ "$count" -eq 0 ]] && info "No backups found in $backup_dir"
