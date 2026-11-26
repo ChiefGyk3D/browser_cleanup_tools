@@ -69,8 +69,11 @@ declare -g WATERFOX_SNAP_NAME=""
 declare -g WATERFOX_PROCESS_NAMES="waterfox"
 
 # --- Zen Browser ---
+# Zen migrated to the XDG Base Directory spec: it uses ~/.zen only if that
+# legacy directory already exists (old installs), otherwise ~/.config/zen
+# (new installs). See https://github.com/zen-browser/desktop/discussions/12366
 declare -gA ZEN_PROFILES=(
-    [native]="$HOME/.zen"
+    [native]="$([[ -d "$HOME/.zen" ]] && echo "$HOME/.zen" || echo "${XDG_CONFIG_HOME:-$HOME/.config}/zen")"
     [flatpak]="$HOME/.var/app/io.github.zen_browser.zen/.zen"
 )
 declare -gA ZEN_CACHE=(
