@@ -71,23 +71,26 @@ main() {
     local snap_only=false
     local deep=false
 
-    parse_common_flags "$@" || { show_help; exit 0; }
+    parse_common_flags "$@" || {
+        show_help
+        exit 0
+    }
 
     for arg in "$@"; do
         case "$arg" in
-            --native-only)  native_only=true ;;
+            --native-only) native_only=true ;;
             --flatpak-only) flatpak_only=true ;;
-            --snap-only)    snap_only=true ;;
-            --deep)         deep=true ;;
+            --snap-only) snap_only=true ;;
+            --deep) deep=true ;;
         esac
     done
 
     header "Firefox Cleanup Tool"
 
     # Check if any Firefox installation exists before checking if running
-    if [[ ! -d "$NATIVE_PROFILE_DIR" ]] \
-        && ! flatpak_installed "$FLATPAK_APP_ID" \
-        && ! snap_installed "$SNAP_NAME"; then
+    if [[ ! -d "$NATIVE_PROFILE_DIR" ]] &&
+        ! flatpak_installed "$FLATPAK_APP_ID" &&
+        ! snap_installed "$SNAP_NAME"; then
         warn "Firefox not found on this system"
         exit 0
     fi

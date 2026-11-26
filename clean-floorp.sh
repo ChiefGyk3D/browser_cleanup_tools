@@ -64,21 +64,24 @@ main() {
     local flatpak_only=false
     local deep=false
 
-    parse_common_flags "$@" || { show_help; exit 0; }
+    parse_common_flags "$@" || {
+        show_help
+        exit 0
+    }
 
     for arg in "$@"; do
         case "$arg" in
-            --native-only)  native_only=true ;;
+            --native-only) native_only=true ;;
             --flatpak-only) flatpak_only=true ;;
-            --deep)         deep=true ;;
+            --deep) deep=true ;;
         esac
     done
 
     header "Floorp Cleanup Tool"
 
     # Check if any Floorp installation exists before checking if running
-    if [[ ! -d "$NATIVE_PROFILE_DIR" ]] \
-        && ! flatpak_installed "$FLATPAK_APP_ID"; then
+    if [[ ! -d "$NATIVE_PROFILE_DIR" ]] &&
+        ! flatpak_installed "$FLATPAK_APP_ID"; then
         warn "Floorp not found on this system"
         exit 0
     fi

@@ -36,9 +36,7 @@ declare -A CHROME_PATHS=(
 
 OUTPUT_FORMAT="text"
 SCAN_EXTENSIONS=true
-SCAN_BOOKMARKS=true
 SCAN_PROFILES=true
-SCAN_CACHE=true
 
 show_help() {
     cat <<EOF
@@ -125,7 +123,7 @@ scan_mozilla_profiles() {
 
                 echo "PROFILE|$browser_name|$install_type|$pname|$total_size|$cache_size|$data_size|$file_count|$last_mod_date|$has_bookmarks|$has_passwords|$has_history|$profile_dir"
             fi
-        done < "$profiles_ini"
+        done <"$profiles_ini"
     done
 }
 
@@ -211,7 +209,7 @@ for addon in data.get('addons', []):
 " 2>/dev/null
                 fi
             fi
-        done < "$profiles_ini"
+        done <"$profiles_ini"
     done
 }
 
@@ -287,7 +285,7 @@ analyze_profiles() {
 
     # Find empty or near-empty profiles
     local empty_profiles=""
-    while IFS='|' read -r _ browser install pname total cache data files last_mod has_bm has_pw has_hist path; do
+    while IFS='|' read -r _ browser install pname total cache data _ last_mod has_bm has_pw _ path; do
         [[ -z "$browser" ]] && continue
         local data_kb=$((data / 1024))
 
@@ -296,7 +294,7 @@ analyze_profiles() {
             ((issues++))
             empty_profiles+="EMPTY|$browser|$install|$pname|$(human_size "$total")|$last_mod|$path"$'\n'
         fi
-    done <<< "$all_profiles"
+    done <<<"$all_profiles"
 
     if [[ -n "$empty_profiles" ]]; then
         if [[ "$OUTPUT_FORMAT" == "text" ]]; then
@@ -305,15 +303,14 @@ analyze_profiles() {
                 [[ -z "$browser" ]] && continue
                 echo -e "  ${RED}●${NC} ${BOLD}$browser${NC} [$install] $pname — ${DIM}$size, last modified: $last_mod${NC}"
                 echo -e "    ${DIM}Path: $path${NC}"
-            done <<< "$empty_profiles"
+            done <<<"$empty_profiles"
             echo ""
         fi
     fi
 
     # Find duplicate installations (same browser in multiple install types)
     local seen_browsers=()
-    local dup_installs=""
-    while IFS='|' read -r _ browser install pname total cache data files last_mod has_bm has_pw has_hist path; do
+    while IFS='|' read -r _ browser install pname total cache data _ last_mod has_bm has_pw _ path; do
         [[ -z "$browser" ]] && continue
         local key="$browser"
         local found=false
@@ -326,13 +323,13 @@ analyze_profiles() {
         if [[ "$found" == "false" ]]; then
             seen_browsers+=("$key")
         fi
-    done <<< "$all_profiles"
+    done <<<"$all_profiles"
 
     # Check for same browser across install types with similar profiles
     for browser_name in "Firefox" "Floorp" "Chromium" "Brave" "Chrome"; do
         local installs=()
         local install_sizes=()
-        while IFS='|' read -r _ browser install pname total cache data files last_mod has_bm has_pw has_hist path; do
+        while IFS='|' read -r _ browser install pname total cache data _ last_mod has_bm has_pw _ path; do
             [[ "$browser" != "$browser_name" ]] && continue
             local already=false
             for seen in "${installs[@]}"; do
@@ -343,10 +340,10 @@ analyze_profiles() {
                 local total_for_install=0
                 while IFS='|' read -r _ b2 i2 _ t2 _ _ _ _ _ _ _ _; do
                     [[ "$b2" == "$browser_name" && "$i2" == "$install" ]] && total_for_install=$((total_for_install + t2))
-                done <<< "$all_profiles"
+                done <<<"$all_profiles"
                 install_sizes+=("$install:$total_for_install")
             fi
-        done <<< "$all_profiles"
+        done <<<"$all_profiles"
 
         if [[ ${#installs[@]} -gt 1 ]]; then
             ((issues++))
@@ -364,12 +361,12 @@ analyze_profiles() {
     done
 
     # Find profiles with large cache relative to data
-    while IFS='|' read -r _ browser install pname total cache data files last_mod has_bm has_pw has_hist path; do
+    while IFS='|' read -r _ browser install pname total cache data _ last_mod has_bm has_pw _ path; do
         [[ -z "$browser" ]] && continue
-        [[ "$total" -lt 1048576 ]] && continue  # Skip tiny profiles
+        [[ "$total" -lt 1048576 ]] && continue # Skip tiny profiles
         local cache_pct=0
         if [[ "$total" -gt 0 ]]; then
-            cache_pct=$(( (cache * 100) / total ))
+            cache_pct=$(((cache * 100) / total))
         fi
         if [[ "$cache_pct" -gt 70 ]]; then
             ((issues++))
@@ -380,7 +377,7 @@ analyze_profiles() {
                 echo ""
             fi
         fi
-    done <<< "$all_profiles"
+    done <<<"$all_profiles"
 
     return $issues
 }
@@ -407,7 +404,7 @@ analyze_extensions() {
             ext_locations[$key]="$loc"
         fi
         ext_names[$key]="$name (v$version)"
-    done <<< "$all_extensions"
+    done <<<"$all_extensions"
 
     # Find extensions present in multiple places
     local dup_count=0
@@ -552,10 +549,15 @@ main() {
 
     for arg in "$@"; do
         case "$arg" in
-            --json)             OUTPUT_FORMAT="json" ;;
-            --extensions-only)  SCAN_PROFILES=false; SCAN_CACHE=false; SCAN_BOOKMARKS=false ;;
-            --profiles-only)    SCAN_EXTENSIONS=false ;;
-            -h|--help)          show_help; exit 0 ;;
+            --json) OUTPUT_FORMAT="json" ;;
+            --extensions-only)
+                SCAN_PROFILES=false
+                ;;
+            --profiles-only) SCAN_EXTENSIONS=false ;;
+            -h | --help)
+                show_help
+                exit 0
+                ;;
         esac
     done
 
@@ -575,21 +577,21 @@ main() {
     # Collect all profiles
     local all_profiles=""
     if [[ "$SCAN_PROFILES" == "true" ]]; then
-        [[ -z "$target_browser" || "$target_browser" == "firefox" ]]  && all_profiles+=$(scan_mozilla_profiles FIREFOX_PATHS "Firefox")$'\n'
-        [[ -z "$target_browser" || "$target_browser" == "floorp" ]]   && all_profiles+=$(scan_mozilla_profiles FLOORP_PATHS "Floorp")$'\n'
+        [[ -z "$target_browser" || "$target_browser" == "firefox" ]] && all_profiles+=$(scan_mozilla_profiles FIREFOX_PATHS "Firefox")$'\n'
+        [[ -z "$target_browser" || "$target_browser" == "floorp" ]] && all_profiles+=$(scan_mozilla_profiles FLOORP_PATHS "Floorp")$'\n'
         [[ -z "$target_browser" || "$target_browser" == "chromium" ]] && all_profiles+=$(scan_chromium_profiles CHROMIUM_PATHS "Chromium")$'\n'
-        [[ -z "$target_browser" || "$target_browser" == "brave" ]]    && all_profiles+=$(scan_chromium_profiles BRAVE_PATHS "Brave")$'\n'
-        [[ -z "$target_browser" || "$target_browser" == "chrome" ]]   && all_profiles+=$(scan_chromium_profiles CHROME_PATHS "Chrome")$'\n'
+        [[ -z "$target_browser" || "$target_browser" == "brave" ]] && all_profiles+=$(scan_chromium_profiles BRAVE_PATHS "Brave")$'\n'
+        [[ -z "$target_browser" || "$target_browser" == "chrome" ]] && all_profiles+=$(scan_chromium_profiles CHROME_PATHS "Chrome")$'\n'
     fi
 
     # Collect all extensions
     local all_extensions=""
     if [[ "$SCAN_EXTENSIONS" == "true" ]]; then
-        [[ -z "$target_browser" || "$target_browser" == "firefox" ]]  && all_extensions+=$(scan_mozilla_extensions FIREFOX_PATHS "Firefox")$'\n'
-        [[ -z "$target_browser" || "$target_browser" == "floorp" ]]   && all_extensions+=$(scan_mozilla_extensions FLOORP_PATHS "Floorp")$'\n'
+        [[ -z "$target_browser" || "$target_browser" == "firefox" ]] && all_extensions+=$(scan_mozilla_extensions FIREFOX_PATHS "Firefox")$'\n'
+        [[ -z "$target_browser" || "$target_browser" == "floorp" ]] && all_extensions+=$(scan_mozilla_extensions FLOORP_PATHS "Floorp")$'\n'
         [[ -z "$target_browser" || "$target_browser" == "chromium" ]] && all_extensions+=$(scan_chromium_extensions CHROMIUM_PATHS "Chromium")$'\n'
-        [[ -z "$target_browser" || "$target_browser" == "brave" ]]    && all_extensions+=$(scan_chromium_extensions BRAVE_PATHS "Brave")$'\n'
-        [[ -z "$target_browser" || "$target_browser" == "chrome" ]]   && all_extensions+=$(scan_chromium_extensions CHROME_PATHS "Chrome")$'\n'
+        [[ -z "$target_browser" || "$target_browser" == "brave" ]] && all_extensions+=$(scan_chromium_extensions BRAVE_PATHS "Brave")$'\n'
+        [[ -z "$target_browser" || "$target_browser" == "chrome" ]] && all_extensions+=$(scan_chromium_extensions CHROME_PATHS "Chrome")$'\n'
     fi
 
     # Clean up empty lines

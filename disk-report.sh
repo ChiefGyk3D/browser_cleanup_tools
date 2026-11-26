@@ -62,7 +62,7 @@ report_app() {
     local total_bytes=$((profile_bytes + cache_bytes))
 
     if [[ "$total_bytes" -eq 0 ]]; then
-        return  # Skip if nothing found
+        return # Skip if nothing found
     fi
 
     total_size=$(human_size "$total_bytes")
@@ -118,7 +118,10 @@ main() {
     for arg in "$@"; do
         case "$arg" in
             --json) JSON_MODE=true ;;
-            -h|--help) show_help; exit 0 ;;
+            -h | --help)
+                show_help
+                exit 0
+                ;;
         esac
     done
 

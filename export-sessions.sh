@@ -35,7 +35,6 @@ declare -A CHROME_PATHS=(
 )
 
 EXPORT_DIR="$SCRIPT_DIR/session-exports"
-OUTPUT_FORMAT="text"
 
 show_help() {
     cat <<EOF
@@ -251,10 +250,10 @@ for url in sorted(urls):
 " 2>/dev/null
     elif [[ -n "$target_file" ]]; then
         # Fallback: use strings to extract URLs
-        strings "$target_file" 2>/dev/null | grep -oP 'https?://[^\s"<>]+' | \
-            grep -v '^https\?://chrome\.' | \
-            grep -v '^chrome://' | \
-            grep -v '^chrome-extension://' | \
+        strings "$target_file" 2>/dev/null | grep -oP 'https?://[^\s"<>]+' |
+            grep -v '^https\?://chrome\.' |
+            grep -v '^chrome://' |
+            grep -v '^chrome-extension://' |
             sort -u | while read -r url; do
             echo "TAB|0||$url"
         done
@@ -284,13 +283,13 @@ except:
 
 format_text() {
     local tab_data="$1"
-    while IFS='|' read -r browser install_type profile_name window_id title url; do
+    while IFS='|' read -r browser install_type profile_name _ title url; do
         [[ -z "$url" ]] && continue
         if [[ -n "$title" ]]; then
             echo "# $title"
         fi
         echo "$url"
-    done <<< "$tab_data"
+    done <<<"$tab_data"
 }
 
 format_json() {
@@ -370,7 +369,7 @@ HTML_HEADER
     local tab_count=0
     local urls_js="["
 
-    while IFS='|' read -r browser install_type profile_name window_id title url; do
+    while IFS='|' read -r browser install_type profile_name _ title url; do
         [[ -z "$url" ]] && continue
         ((tab_count++))
 
@@ -390,7 +389,7 @@ HTML_HEADER
         echo "</div>"
 
         urls_js="$urls_js\"$(echo "$url" | sed 's/"/\\"/g')\","
-    done <<< "$tab_data"
+    done <<<"$tab_data"
 
     [[ -n "$current_browser" ]] && echo "</div>"
     urls_js="${urls_js%,}]"
@@ -422,7 +421,7 @@ format_markdown() {
     local current_browser=""
     local tab_count=0
 
-    while IFS='|' read -r browser install_type profile_name window_id title url; do
+    while IFS='|' read -r browser install_type profile_name _ title url; do
         [[ -z "$url" ]] && continue
         ((tab_count++))
 
@@ -435,7 +434,7 @@ format_markdown() {
 
         local display_title="${title:-$url}"
         echo "- [$display_title]($url)"
-    done <<< "$tab_data"
+    done <<<"$tab_data"
 
     echo ""
     echo "---"
@@ -485,9 +484,9 @@ do_export() {
                                 # Prepend browser info: browser|install|profile|window|title|url
                                 local rest="${tab_line#TAB|}"
                                 echo "$browser_name|$install_type|$pname|$rest"
-                            done <<< "$tabs"
+                            done <<<"$tabs"
                         fi
-                    done < "$profiles_ini"
+                    done <"$profiles_ini"
                 fi
             else
                 # Chromium-based — scan Default and Profile* dirs
@@ -503,7 +502,7 @@ do_export() {
                         [[ -z "$tab_line" ]] && continue
                         local rest="${tab_line#TAB|}"
                         echo "$browser_name|$install_type|$pname|$rest"
-                    done <<< "$tabs"
+                    done <<<"$tabs"
                 done
             fi
         done
@@ -554,29 +553,29 @@ do_export() {
     # Generate output
     local output
     case "$format" in
-        json)     output=$(format_json "$all_tabs") ;;
-        html)     output=$(format_html "$all_tabs") ;;
+        json) output=$(format_json "$all_tabs") ;;
+        html) output=$(format_html "$all_tabs") ;;
         markdown) output=$(format_markdown "$all_tabs") ;;
-        *)        output=$(format_text "$all_tabs") ;;
+        *) output=$(format_text "$all_tabs") ;;
     esac
 
     # Write to file or stdout
     if [[ -n "$output_file" ]]; then
         mkdir -p "$(dirname "$output_file")"
-        echo "$output" > "$output_file"
+        echo "$output" >"$output_file"
         success "Exported $tab_count tabs to $output_file"
     else
         # Auto-generate output filename
         mkdir -p "$EXPORT_DIR"
         local ext
         case "$format" in
-            json)     ext="json" ;;
-            html)     ext="html" ;;
+            json) ext="json" ;;
+            html) ext="html" ;;
             markdown) ext="md" ;;
-            *)        ext="txt" ;;
+            *) ext="txt" ;;
         esac
         local auto_file="$EXPORT_DIR/session_$(date +%Y%m%d_%H%M%S).$ext"
-        echo "$output" > "$auto_file"
+        echo "$output" >"$auto_file"
         success "Exported $tab_count tabs to $auto_file"
     fi
 }
@@ -606,9 +605,9 @@ do_list() {
         local tab_count="?"
         case "$f" in
             *.json) tab_count=$(python3 -c "import json; d=json.load(open('$f')); print(d.get('total_tabs','?'))" 2>/dev/null || echo "?") ;;
-            *.txt)  tab_count=$(grep -c '^http' "$f" 2>/dev/null || echo "?") ;;
+            *.txt) tab_count=$(grep -c '^http' "$f" 2>/dev/null || echo "?") ;;
             *.html) tab_count=$(grep -c 'class="tab"' "$f" 2>/dev/null || echo "?") ;;
-            *.md)   tab_count=$(grep -c '^\- \[' "$f" 2>/dev/null || echo "?") ;;
+            *.md) tab_count=$(grep -c '^\- \[' "$f" 2>/dev/null || echo "?") ;;
         esac
 
         echo -e "  ${BOLD}$fname${NC}  ${DIM}($fsize, $tab_count tabs, $fdate)${NC}"
@@ -672,7 +671,7 @@ for tab in data.get('tabs', []):
         *)
             while IFS= read -r url; do
                 [[ "$url" =~ ^https?:// ]] && urls+=("$url")
-            done < "$input_file"
+            done <"$input_file"
             ;;
     esac
 
@@ -687,11 +686,11 @@ for tab in data.get('tabs', []):
     local browser_cmd=""
     if [[ -n "$target_browser" ]]; then
         case "$target_browser" in
-            firefox)  browser_cmd="firefox" ;;
-            floorp)   browser_cmd="floorp" ;;
+            firefox) browser_cmd="firefox" ;;
+            floorp) browser_cmd="floorp" ;;
             chromium) browser_cmd="chromium-browser" ;;
-            brave)    browser_cmd="brave-browser" ;;
-            chrome)   browser_cmd="google-chrome" ;;
+            brave) browser_cmd="brave-browser" ;;
+            chrome) browser_cmd="google-chrome" ;;
         esac
     else
         # Auto-detect default browser
@@ -699,11 +698,11 @@ for tab in data.get('tabs', []):
             local default
             default=$(xdg-settings get default-web-browser 2>/dev/null || echo "")
             case "$default" in
-                *firefox*)  browser_cmd="firefox" ;;
-                *floorp*)   browser_cmd="floorp" ;;
+                *firefox*) browser_cmd="firefox" ;;
+                *floorp*) browser_cmd="floorp" ;;
                 *chromium*) browser_cmd="chromium-browser" ;;
-                *brave*)    browser_cmd="brave-browser" ;;
-                *chrome*)   browser_cmd="google-chrome" ;;
+                *brave*) browser_cmd="brave-browser" ;;
+                *chrome*) browser_cmd="google-chrome" ;;
             esac
         fi
         # Fallback
@@ -719,12 +718,15 @@ for tab in data.get('tabs', []):
     fi
 
     echo -e "Using browser: ${BOLD}$browser_cmd${NC}"
-    confirm "Open ${#urls[@]} tabs?" || { info "Cancelled."; exit 0; }
+    confirm "Open ${#urls[@]} tabs?" || {
+        info "Cancelled."
+        exit 0
+    }
 
     # Open URLs
     for url in "${urls[@]}"; do
         "$browser_cmd" "$url" &>/dev/null &
-        sleep 0.3  # Small delay to avoid overwhelming the browser
+        sleep 0.3 # Small delay to avoid overwhelming the browser
     done
 
     success "Opened ${#urls[@]} tabs"
@@ -746,14 +748,29 @@ main() {
     local i=0
     while [[ $i -lt ${#args[@]} ]]; do
         case "${args[$i]}" in
-            export|list|restore|convert) command="${args[$i]}" ;;
-            --format)    ((i++)); format="${args[$i]}" ;;
-            --browser)   ((i++)); target_browser="${args[$i]}" ;;
-            --profile)   ((i++)); target_profile="${args[$i]}" ;;
-            --output)    ((i++)); output_file="${args[$i]}" ;;
-            --all)       target_browser="" ;;
-            -y|--yes)    AUTO_YES=true ;;
-            -h|--help)   show_help; exit 0 ;;
+            export | list | restore | convert) command="${args[$i]}" ;;
+            --format)
+                ((i++))
+                format="${args[$i]}"
+                ;;
+            --browser)
+                ((i++))
+                target_browser="${args[$i]}"
+                ;;
+            --profile)
+                ((i++))
+                target_profile="${args[$i]}"
+                ;;
+            --output)
+                ((i++))
+                output_file="${args[$i]}"
+                ;;
+            --all) target_browser="" ;;
+            -y | --yes) AUTO_YES=true ;;
+            -h | --help)
+                show_help
+                exit 0
+                ;;
             *)
                 # For restore, the next positional arg is the file
                 if [[ "$command" == "restore" && -z "$restore_file" && ! "${args[$i]}" == --* ]]; then
@@ -813,14 +830,17 @@ for tab in data.get('tabs', []):
 
             local output
             case "$format" in
-                html)     output=$(format_html "$urls") ;;
+                html) output=$(format_html "$urls") ;;
                 markdown) output=$(format_markdown "$urls") ;;
-                text)     output=$(format_text "$urls") ;;
-                *)        error "Unknown format: $format"; exit 1 ;;
+                text) output=$(format_text "$urls") ;;
+                *)
+                    error "Unknown format: $format"
+                    exit 1
+                    ;;
             esac
 
             if [[ -n "$output_file" ]]; then
-                echo "$output" > "$output_file"
+                echo "$output" >"$output_file"
                 success "Converted to $output_file"
             else
                 echo "$output"

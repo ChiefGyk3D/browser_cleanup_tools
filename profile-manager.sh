@@ -13,7 +13,7 @@ source "$SCRIPT_DIR/lib/profiles.sh"
 source "$SCRIPT_DIR/lib/config.sh"
 
 show_help() {
-    cat << EOF
+    cat <<EOF
 Unified Mozilla Profile Manager
 
 Usage: $(basename "$0") --browser <BROWSER> <COMMAND> [OPTIONS]
@@ -50,11 +50,11 @@ EOF
 # Map CLI browser name to internal registry name
 resolve_browser() {
     case "${1,,}" in
-        firefox)   echo "FIREFOX" ;;
-        floorp)    echo "FLOORP" ;;
+        firefox) echo "FIREFOX" ;;
+        floorp) echo "FLOORP" ;;
         librewolf) echo "LIBREWOLF" ;;
-        waterfox)  echo "WATERFOX" ;;
-        zen|zen-browser) echo "ZEN" ;;
+        waterfox) echo "WATERFOX" ;;
+        zen | zen-browser) echo "ZEN" ;;
         *) echo "" ;;
     esac
 }
@@ -237,10 +237,16 @@ do_restore() {
 
     echo ""
     read -rp "Enter backup filename to restore: " backup_name
-    [[ -z "$backup_name" ]] && { error "No backup selected"; return 1; }
+    [[ -z "$backup_name" ]] && {
+        error "No backup selected"
+        return 1
+    }
 
     local archive="$backup_dir/$backup_name"
-    [[ ! -f "$archive" ]] && { error "Backup not found: $archive"; return 1; }
+    [[ ! -f "$archive" ]] && {
+        error "Backup not found: $archive"
+        return 1
+    }
 
     # Select target profile directory
     echo ""
@@ -264,7 +270,7 @@ do_restore() {
         ((i++))
     done
     read -rp "Select (1-${#targets[@]}): " choice
-    local target="${targets[$((choice-1))]}"
+    local target="${targets[$((choice - 1))]}"
     local target_dir="${target#*|}"
 
     restore_profile "$archive" "$target_dir"
@@ -283,10 +289,16 @@ do_create() {
     local base_dir=""
     for install_type in native flatpak snap; do
         local dir="${profiles_ref[$install_type]:-}"
-        [[ -d "$dir" ]] && { base_dir="$dir"; break; }
+        [[ -d "$dir" ]] && {
+            base_dir="$dir"
+            break
+        }
     done
 
-    [[ -z "$base_dir" ]] && { error "No $display_name installation found"; return 1; }
+    [[ -z "$base_dir" ]] && {
+        error "No $display_name installation found"
+        return 1
+    }
 
     # Generate random prefix
     local prefix
@@ -311,10 +323,10 @@ do_create() {
                 local num="${BASH_REMATCH[1]}"
                 [[ "$num" -gt "$max_num" ]] && max_num="$num"
             fi
-        done < "$ini_file"
+        done <"$ini_file"
         local next_num=$((max_num + 1))
 
-        cat >> "$ini_file" << EOF
+        cat >>"$ini_file" <<EOF
 
 [Profile${next_num}]
 Name=${profile_name}
@@ -433,7 +445,7 @@ do_reset() {
             )
 
             for item in "${remove_items[@]}"; do
-                [[ -e "$path/$item" ]] && rm -rf "$path/$item"
+                [[ -e "$path/$item" ]] && rm -rf "${path:?}/$item"
             done
 
             success "Profile '$name' has been reset"
@@ -460,17 +472,47 @@ main() {
     # Parse arguments
     while [[ $# -gt 0 ]]; do
         case "$1" in
-            --browser|-b) browser_name="${2:-}"; shift 2 ;;
-            --install)    install_filter="${2:-}-only"; shift 2 ;;
-            --backup-dir) backup_dir="${2:-}"; shift 2 ;;
-            --encrypt)    encrypt="true"; shift ;;
-            -y|--yes)     AUTO_YES=true; export AUTO_YES; shift ;;
-            -n|--dry-run) DRY_RUN=true; export DRY_RUN; shift ;;
-            -h|--help)    show_help; exit 0 ;;
-            -V|--version) show_version; exit 0 ;;
-            list|info|backup|restore|create|delete|reset)
-                command="$1"; shift
-                [[ $# -gt 0 && ! "$1" =~ ^- ]] && { target="$1"; shift; }
+            --browser | -b)
+                browser_name="${2:-}"
+                shift 2
+                ;;
+            --install)
+                install_filter="${2:-}-only"
+                shift 2
+                ;;
+            --backup-dir)
+                backup_dir="${2:-}"
+                shift 2
+                ;;
+            --encrypt)
+                encrypt="true"
+                shift
+                ;;
+            -y | --yes)
+                AUTO_YES=true
+                export AUTO_YES
+                shift
+                ;;
+            -n | --dry-run)
+                DRY_RUN=true
+                export DRY_RUN
+                shift
+                ;;
+            -h | --help)
+                show_help
+                exit 0
+                ;;
+            -V | --version)
+                show_version
+                exit 0
+                ;;
+            list | info | backup | restore | create | delete | reset)
+                command="$1"
+                shift
+                [[ $# -gt 0 && ! "$1" =~ ^- ]] && {
+                    target="$1"
+                    shift
+                }
                 ;;
             *) shift ;;
         esac
@@ -495,19 +537,48 @@ main() {
     fi
 
     case "$command" in
-        list)    do_list "$browser" "$install_filter" ;;
-        info)    [[ -z "$target" ]] && { error "Profile name required"; exit 1; }
-                 do_info "$browser" "$install_filter" "$target" ;;
-        backup)  [[ -z "$target" ]] && { error "Profile name required"; exit 1; }
-                 do_backup "$browser" "$install_filter" "$target" "$backup_dir" "$encrypt" ;;
+        list) do_list "$browser" "$install_filter" ;;
+        info)
+            [[ -z "$target" ]] && {
+                error "Profile name required"
+                exit 1
+            }
+            do_info "$browser" "$install_filter" "$target"
+            ;;
+        backup)
+            [[ -z "$target" ]] && {
+                error "Profile name required"
+                exit 1
+            }
+            do_backup "$browser" "$install_filter" "$target" "$backup_dir" "$encrypt"
+            ;;
         restore) do_restore "$browser" "$install_filter" "$backup_dir" ;;
-        create)  [[ -z "$target" ]] && { error "Profile name required"; exit 1; }
-                 do_create "$browser" "$install_filter" "$target" ;;
-        delete)  [[ -z "$target" ]] && { error "Profile name required"; exit 1; }
-                 do_delete "$browser" "$install_filter" "$target" "$backup_dir" "$encrypt" ;;
-        reset)   [[ -z "$target" ]] && { error "Profile name required"; exit 1; }
-                 do_reset "$browser" "$install_filter" "$target" "$backup_dir" "$encrypt" ;;
-        *)       error "No command specified"; show_help; exit 1 ;;
+        create)
+            [[ -z "$target" ]] && {
+                error "Profile name required"
+                exit 1
+            }
+            do_create "$browser" "$install_filter" "$target"
+            ;;
+        delete)
+            [[ -z "$target" ]] && {
+                error "Profile name required"
+                exit 1
+            }
+            do_delete "$browser" "$install_filter" "$target" "$backup_dir" "$encrypt"
+            ;;
+        reset)
+            [[ -z "$target" ]] && {
+                error "Profile name required"
+                exit 1
+            }
+            do_reset "$browser" "$install_filter" "$target" "$backup_dir" "$encrypt"
+            ;;
+        *)
+            error "No command specified"
+            show_help
+            exit 1
+            ;;
     esac
 }
 

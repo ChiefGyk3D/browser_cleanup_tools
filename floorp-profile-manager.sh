@@ -76,7 +76,7 @@ parse_profiles_ini() {
             IsRelative) is_relative="$value" ;;
             Default) is_default="$value" ;;
         esac
-    done < "$ini_file"
+    done <"$ini_file"
     # Print last profile
     if [[ -n "$name" ]]; then
         echo "${name}|${path}|${is_relative}|${is_default}"
@@ -188,7 +188,7 @@ show_profile_info() {
         echo ""
         echo -e "  ${BOLD}Key Files:${NC}"
         for f in places.sqlite favicons.sqlite cookies.sqlite formhistory.sqlite \
-                 key4.db logins.json cert9.db prefs.js user.js; do
+            key4.db logins.json cert9.db prefs.js user.js; do
             local fp="$full_path/$f"
             if [[ -f "$fp" ]]; then
                 local fsize
@@ -262,7 +262,7 @@ create_profile() {
     if [[ -f "$ini_file" ]]; then
         next_num=$(grep -c '^\[Profile' "$ini_file" 2>/dev/null || echo "0")
     else
-        cat > "$ini_file" <<INIEOF
+        cat >"$ini_file" <<INIEOF
 [General]
 StartWithLastProfile=1
 
@@ -270,7 +270,7 @@ INIEOF
     fi
 
     # Append the new profile
-    cat >> "$ini_file" <<INIEOF
+    cat >>"$ini_file" <<INIEOF
 [Profile${next_num}]
 Name=${profile_name}
 IsRelative=1
@@ -332,7 +332,7 @@ delete_profile() {
                         skip=true
                         sed -i '$ d' "$temp_ini" 2>/dev/null || true
                     fi
-                done < "$ini_file" > "$temp_ini"
+                done <"$ini_file" >"$temp_ini"
                 mv "$temp_ini" "$ini_file"
 
                 success "Profile '$target_name' deleted from $install_type $APP_NAME"
@@ -539,19 +539,23 @@ restore_backup() {
 }
 
 main() {
-    parse_common_flags "$@" || { show_help; exit 0; }
+    parse_common_flags "$@" || {
+        show_help
+        exit 0
+    }
 
     local command=""
     local target=""
 
     for arg in "$@"; do
         case "$arg" in
-            --native-only)       NATIVE_ONLY=true ;;
-            --flatpak-only)      FLATPAK_ONLY=true ;;
-            --backup-dir)        :;;
-            -y|--yes|-h|--help)  ;;
-            list|backup|create|delete|reset|info|restore)
-                command="$arg" ;;
+            --native-only) NATIVE_ONLY=true ;;
+            --flatpak-only) FLATPAK_ONLY=true ;;
+            --backup-dir) : ;;
+            -y | --yes | -h | --help) ;;
+            list | backup | create | delete | reset | info | restore)
+                command="$arg"
+                ;;
             *)
                 local prev=""
                 for a in "$@"; do
@@ -583,14 +587,17 @@ main() {
     fi
 
     case "$command" in
-        list)    run_for_installations list_profiles ;;
-        info)    run_for_installations show_profile_info "$target" ;;
-        backup)  run_for_installations backup_profile "$target" ;;
-        create)  run_for_installations create_profile "$target" ;;
-        delete)  run_for_installations delete_profile "$target" ;;
-        reset)   run_for_installations reset_profile "$target" ;;
+        list) run_for_installations list_profiles ;;
+        info) run_for_installations show_profile_info "$target" ;;
+        backup) run_for_installations backup_profile "$target" ;;
+        create) run_for_installations create_profile "$target" ;;
+        delete) run_for_installations delete_profile "$target" ;;
+        reset) run_for_installations reset_profile "$target" ;;
         restore) restore_backup "$target" ;;
-        *)       show_help; exit 1 ;;
+        *)
+            show_help
+            exit 1
+            ;;
     esac
 }
 

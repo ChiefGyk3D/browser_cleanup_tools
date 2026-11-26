@@ -31,17 +31,17 @@ BCT_LOG_FILE="$BCT_LOG_DIR/cleanup.log"
 # ===========================================================================
 
 # Cleaning defaults
-DEFAULT_CLEAN_LEVEL="${DEFAULT_CLEAN_LEVEL:-standard}"  # standard, deep
-DEFAULT_INSTALL_FILTER="${DEFAULT_INSTALL_FILTER:-}"     # native-only, flatpak-only, snap-only, or empty for all
+DEFAULT_CLEAN_LEVEL="${DEFAULT_CLEAN_LEVEL:-standard}" # standard, deep
+DEFAULT_INSTALL_FILTER="${DEFAULT_INSTALL_FILTER:-}"   # native-only, flatpak-only, snap-only, or empty for all
 AUTO_YES="${AUTO_YES:-false}"
 
 # Age/size threshold defaults
-MAX_CACHE_AGE_DAYS="${MAX_CACHE_AGE_DAYS:-0}"     # 0 = no age limit
-MIN_CACHE_SIZE_MB="${MIN_CACHE_SIZE_MB:-0}"        # 0 = no minimum size threshold
+MAX_CACHE_AGE_DAYS="${MAX_CACHE_AGE_DAYS:-0}" # 0 = no age limit
+MIN_CACHE_SIZE_MB="${MIN_CACHE_SIZE_MB:-0}"   # 0 = no minimum size threshold
 
 # Privacy defaults
-DEFAULT_PRIVACY_LEVEL="${DEFAULT_PRIVACY_LEVEL:-standard}"  # standard, strict, paranoid
-DEFAULT_PERF_LEVEL="${DEFAULT_PERF_LEVEL:-balanced}"         # balanced, aggressive, low-ram
+DEFAULT_PRIVACY_LEVEL="${DEFAULT_PRIVACY_LEVEL:-standard}" # standard, strict, paranoid
+DEFAULT_PERF_LEVEL="${DEFAULT_PERF_LEVEL:-balanced}"       # balanced, aggressive, low-ram
 
 # Browser exclusions (space-separated browser names to skip)
 EXCLUDED_BROWSERS="${EXCLUDED_BROWSERS:-}"
@@ -53,11 +53,11 @@ LOG_ENABLED="${LOG_ENABLED:-false}"
 ENCRYPT_BACKUPS="${ENCRYPT_BACKUPS:-false}"
 
 # Display/GPU (from nvidia-capture-card)
-ENABLE_GPU_TWEAKS="${ENABLE_GPU_TWEAKS:-auto}"  # auto, nvidia, amd, intel, none
-DISPLAY_REFRESH_RATE="${DISPLAY_REFRESH_RATE:-auto}"  # auto or specific Hz value
+ENABLE_GPU_TWEAKS="${ENABLE_GPU_TWEAKS:-auto}"       # auto, nvidia, amd, intel, none
+DISPLAY_REFRESH_RATE="${DISPLAY_REFRESH_RATE:-auto}" # auto or specific Hz value
 
 # Scrolling preference (from Betterfox Smoothfox)
-SCROLL_STYLE="${SCROLL_STYLE:-sharpen}"  # sharpen, instant, smooth, natural
+SCROLL_STYLE="${SCROLL_STYLE:-sharpen}" # sharpen, instant, smooth, natural
 
 # ===========================================================================
 # CONFIG FILE LOADING
@@ -81,21 +81,21 @@ load_config() {
             value="${value#\'}"
 
             case "$key" in
-                DEFAULT_CLEAN_LEVEL)     DEFAULT_CLEAN_LEVEL="$value" ;;
-                DEFAULT_INSTALL_FILTER)  DEFAULT_INSTALL_FILTER="$value" ;;
-                AUTO_YES)                AUTO_YES="$value" ;;
-                MAX_CACHE_AGE_DAYS)      MAX_CACHE_AGE_DAYS="$value" ;;
-                MIN_CACHE_SIZE_MB)       MIN_CACHE_SIZE_MB="$value" ;;
-                DEFAULT_PRIVACY_LEVEL)   DEFAULT_PRIVACY_LEVEL="$value" ;;
-                DEFAULT_PERF_LEVEL)      DEFAULT_PERF_LEVEL="$value" ;;
-                EXCLUDED_BROWSERS)       EXCLUDED_BROWSERS="$value" ;;
-                LOG_ENABLED)             LOG_ENABLED="$value" ;;
-                ENCRYPT_BACKUPS)         ENCRYPT_BACKUPS="$value" ;;
-                ENABLE_GPU_TWEAKS)       ENABLE_GPU_TWEAKS="$value" ;;
-                DISPLAY_REFRESH_RATE)    DISPLAY_REFRESH_RATE="$value" ;;
-                SCROLL_STYLE)            SCROLL_STYLE="$value" ;;
+                DEFAULT_CLEAN_LEVEL) DEFAULT_CLEAN_LEVEL="$value" ;;
+                DEFAULT_INSTALL_FILTER) DEFAULT_INSTALL_FILTER="$value" ;;
+                AUTO_YES) AUTO_YES="$value" ;;
+                MAX_CACHE_AGE_DAYS) MAX_CACHE_AGE_DAYS="$value" ;;
+                MIN_CACHE_SIZE_MB) MIN_CACHE_SIZE_MB="$value" ;;
+                DEFAULT_PRIVACY_LEVEL) DEFAULT_PRIVACY_LEVEL="$value" ;;
+                DEFAULT_PERF_LEVEL) DEFAULT_PERF_LEVEL="$value" ;;
+                EXCLUDED_BROWSERS) EXCLUDED_BROWSERS="$value" ;;
+                LOG_ENABLED) LOG_ENABLED="$value" ;;
+                ENCRYPT_BACKUPS) ENCRYPT_BACKUPS="$value" ;;
+                ENABLE_GPU_TWEAKS) ENABLE_GPU_TWEAKS="$value" ;;
+                DISPLAY_REFRESH_RATE) DISPLAY_REFRESH_RATE="$value" ;;
+                SCROLL_STYLE) SCROLL_STYLE="$value" ;;
             esac
-        done < "$BCT_CONFIG_FILE"
+        done <"$BCT_CONFIG_FILE"
     fi
 }
 
@@ -105,7 +105,7 @@ init_config() {
     mkdir -p "$BCT_LOG_DIR"
 
     if [[ ! -f "$BCT_CONFIG_FILE" ]]; then
-        cat > "$BCT_CONFIG_FILE" << 'CONFIGEOF'
+        cat >"$BCT_CONFIG_FILE" <<'CONFIGEOF'
 # Browser Cleanup Tools Configuration
 # ====================================
 # Edit this file to set persistent defaults.
@@ -159,7 +159,7 @@ CONFIGEOF
     fi
 
     if [[ ! -f "$BCT_COOKIE_ALLOWLIST" ]]; then
-        cat > "$BCT_COOKIE_ALLOWLIST" << 'COOKIEOF'
+        cat >"$BCT_COOKIE_ALLOWLIST" <<'COOKIEOF'
 # Cookie Allowlist for Deep Clean
 # ================================
 # One domain per line. Cookies for these domains will be preserved
@@ -172,7 +172,7 @@ COOKIEOF
     fi
 
     if [[ ! -f "$BCT_EXTENSION_ALLOWLIST" ]]; then
-        cat > "$BCT_EXTENSION_ALLOWLIST" << 'EXTEOF'
+        cat >"$BCT_EXTENSION_ALLOWLIST" <<'EXTEOF'
 # Extension Allowlist
 # ====================
 # Extensions listed here are approved. The audit tool will flag
@@ -185,7 +185,7 @@ EXTEOF
     fi
 
     if [[ ! -f "$BCT_EXTENSION_BLOCKLIST" ]]; then
-        cat > "$BCT_EXTENSION_BLOCKLIST" << 'BLKEOF'
+        cat >"$BCT_EXTENSION_BLOCKLIST" <<'BLKEOF'
 # Extension Blocklist
 # ====================
 # Extensions listed here will trigger warnings during audits.
@@ -208,12 +208,12 @@ log_message() {
     shift
     local timestamp
     timestamp=$(date '+%Y-%m-%d %H:%M:%S')
-    echo "[$timestamp] [$level] $*" >> "$BCT_LOG_FILE"
+    echo "[$timestamp] [$level] $*" >>"$BCT_LOG_FILE"
 }
 
-log_info()    { log_message "INFO" "$@"; }
-log_warn()    { log_message "WARN" "$@"; }
-log_error()   { log_message "ERROR" "$@"; }
+log_info() { log_message "INFO" "$@"; }
+log_warn() { log_message "WARN" "$@"; }
+log_error() { log_message "ERROR" "$@"; }
 log_success() { log_message "OK" "$@"; }
 
 # ===========================================================================
@@ -256,7 +256,7 @@ is_extension_allowed() {
     local ext_id="$1"
     local allowed
     allowed=$(get_extension_allowlist)
-    [[ -z "$allowed" ]] && return 0  # empty allowlist = all allowed
+    [[ -z "$allowed" ]] && return 0 # empty allowlist = all allowed
     echo "$allowed" | grep -qF "$ext_id"
 }
 
@@ -293,7 +293,7 @@ cache_meets_age_threshold() {
     local cache_dir="$1"
     local max_age_days="${MAX_CACHE_AGE_DAYS:-0}"
 
-    [[ "$max_age_days" -eq 0 ]] && return 0  # no age limit
+    [[ "$max_age_days" -eq 0 ]] && return 0 # no age limit
     [[ ! -d "$cache_dir" ]] && return 1
 
     # Check if any files are older than the threshold
@@ -308,7 +308,7 @@ cache_meets_size_threshold() {
     local cache_dir="$1"
     local min_size_mb="${MIN_CACHE_SIZE_MB:-0}"
 
-    [[ "$min_size_mb" -eq 0 ]] && return 0  # no size limit
+    [[ "$min_size_mb" -eq 0 ]] && return 0 # no size limit
     [[ ! -d "$cache_dir" ]] && return 1
 
     local size_bytes
@@ -352,7 +352,10 @@ detect_gpu_vendor() {
         echo "$ENABLE_GPU_TWEAKS"
         return
     fi
-    [[ "$ENABLE_GPU_TWEAKS" == "none" ]] && { echo "none"; return; }
+    [[ "$ENABLE_GPU_TWEAKS" == "none" ]] && {
+        echo "none"
+        return
+    }
 
     if command -v nvidia-smi &>/dev/null && nvidia-smi &>/dev/null; then
         echo "nvidia"
@@ -376,20 +379,26 @@ detect_refresh_rate() {
 
     # Try nvidia-settings first (format: "2560x1440_180 @2560x1440")
     if command -v nvidia-settings &>/dev/null; then
-        rate=$(nvidia-settings -t -q CurrentMetaMode 2>/dev/null | \
+        rate=$(nvidia-settings -t -q CurrentMetaMode 2>/dev/null |
             grep -oP '[0-9]+x[0-9]+_\K[0-9]+' | sort -rn | head -1)
-        [[ -n "$rate" ]] && { echo "$rate"; return; }
+        [[ -n "$rate" ]] && {
+            echo "$rate"
+            return
+        }
     fi
 
     # Fallback to xrandr
     if command -v xrandr &>/dev/null; then
-        rate=$(xrandr 2>/dev/null | grep '\*' | \
-            grep -oP '[0-9]+\.[0-9]+\*' | tr -d '*' | \
+        rate=$(xrandr 2>/dev/null | grep '\*' |
+            grep -oP '[0-9]+\.[0-9]+\*' | tr -d '*' |
             sort -rn | head -1 | cut -d. -f1)
-        [[ -n "$rate" ]] && { echo "$rate"; return; }
+        [[ -n "$rate" ]] && {
+            echo "$rate"
+            return
+        }
     fi
 
-    echo "60"  # safe default
+    echo "60" # safe default
 }
 
 # Check if VA-API is available

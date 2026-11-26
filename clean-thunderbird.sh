@@ -53,7 +53,7 @@ EOF
 # Thunderbird-specific cleaning for a profile directory
 clean_thunderbird_profiles() {
     local profiles_dir="$1"
-    local install_type="$2"  # "Native" or "Flatpak"
+    local install_type="$2" # "Native" or "Flatpak"
 
     if [[ ! -d "$profiles_dir" ]]; then
         warn "$install_type Thunderbird profile directory not found"
@@ -118,16 +118,23 @@ main() {
     CLEAN_OFFLINE=false
     DEEP_CLEAN=false
 
-    parse_common_flags "$@" || { show_help; exit 0; }
+    parse_common_flags "$@" || {
+        show_help
+        exit 0
+    }
 
     for arg in "$@"; do
         case "$arg" in
-            --native-only)   native_only=true ;;
-            --flatpak-only)  flatpak_only=true ;;
-            --snap-only)     snap_only=true ;;
-            --oauth)         CLEAN_OAUTH=true ;;
+            --native-only) native_only=true ;;
+            --flatpak-only) flatpak_only=true ;;
+            --snap-only) snap_only=true ;;
+            --oauth) CLEAN_OAUTH=true ;;
             --offline-cache) CLEAN_OFFLINE=true ;;
-            --deep)          CLEAN_OAUTH=true; CLEAN_OFFLINE=true; DEEP_CLEAN=true ;;
+            --deep)
+                CLEAN_OAUTH=true
+                CLEAN_OFFLINE=true
+                DEEP_CLEAN=true
+                ;;
         esac
     done
 
@@ -136,9 +143,9 @@ main() {
     header "Thunderbird Cleanup Tool"
 
     # Check if any Thunderbird installation exists before checking if running
-    if [[ ! -d "$NATIVE_PROFILE_DIR" ]] \
-        && ! flatpak_installed "$FLATPAK_APP_ID" \
-        && ! snap_installed "$SNAP_NAME"; then
+    if [[ ! -d "$NATIVE_PROFILE_DIR" ]] &&
+        ! flatpak_installed "$FLATPAK_APP_ID" &&
+        ! snap_installed "$SNAP_NAME"; then
         warn "Thunderbird not found on this system"
         exit 0
     fi
